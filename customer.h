@@ -16,7 +16,7 @@ typedef struct {
     char phoneNumber[PHONE_LENGTH];
     char carPlate[PLATE_LENGTH];
     char carType[TYPE_LENGTH];
-    int oderCount;
+    int orderCount;
 } Customer;
 
 // === Function prototypes ===
