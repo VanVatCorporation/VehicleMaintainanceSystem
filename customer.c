@@ -1,8 +1,5 @@
-// Thêm, sửa, tìm kiếm khách hàng theo SĐT hoặc biển số
+#include stdio.h
+#include stdlib.h
+#include string.h
+#include ctype.h
 
-#include <stdio.h>
-
-addCustomer() {
-    // Code to add a customer
-    printf("Adding a customer...\n");
-}
