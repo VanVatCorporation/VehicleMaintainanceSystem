@@ -75,7 +75,7 @@ void generateCustomerId(char customerId[], int customerCount) {
     snprintf(customerId, ID_LENGTH, "C%06d", customerCount + 1); // Generate ID in format C0001, C0002, etc.
 }
 
-// Find customer index by phone number
+// Search and display customer by phone number
 void searchCustomerByPhone(Customer customers[], int customerCount) {
     char phoneNumber[PHONE_LENGTH];
 
@@ -84,8 +84,24 @@ void searchCustomerByPhone(Customer customers[], int customerCount) {
 
     int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
-    if (index != -1) {
+    if (index == -1) {
         printf("Customer not found:\n");
+    } else {
+        displayCustomer(customers[index]);
+    }
+}
+
+// Search and display customer by car plate
+void searchCustomerByPlate(Customer customers[], int customerCount) {
+    char carPlate[PLATE_LENGTH];
+
+    printf("Enter car plate: ");
+    scanf("%s", carPlate);
+
+    int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
+
+    if (index == -1) {
+        printf("Customer not found.\n");
     } else {
         displayCustomer(customers[index]);
     }
