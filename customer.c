@@ -69,3 +69,24 @@ int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNu
     return 0; 
 }
 
+
+// Generate a unique customer ID based on the current customer count
+void generateCustomerId(char customerId[], int customerCount) {
+    snprintf(customerId, ID_LENGTH, "C%06d", customerCount + 1); // Generate ID in format C0001, C0002, etc.
+}
+
+// Find customer index by phone number
+void searchCustomerByPhone(Customer customers[], int customerCount) {
+    char phoneNumber[PHONE_LENGTH];
+
+    printf("Enter phone number: ");
+    scanf("%s", phoneNumber);
+
+    int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
+
+    if (index != -1) {
+        printf("Customer not found:\n");
+    } else {
+        displayCustomer(customers[index]);
+    }
+}
