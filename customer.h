@@ -5,7 +5,7 @@
 #define MAX_CUSTOMERS 10000
 #define ID_LENGTH 10
 #define NAME_LENGTH 50
-#define PHONE_LENGTH 15
+#define PHONE_LENGTH 11
 #define PLATE_LENGTH 20
 #define TYPE_LENGTH 20
 

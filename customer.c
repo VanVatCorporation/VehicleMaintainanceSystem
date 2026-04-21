@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "customer.h"
 
 // Display customer information
@@ -33,4 +34,25 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
     }
 
     return -1;
+}
+
+// Validate phone number format (simple validation)
+int isValidPhoneNumber(char phoneNumber[]) {
+    
+    size_t length = strlen(phoneNumber);
+    if (length != 10) {
+        return 0; // Phone number must be exactly 10 digits 
+    }
+
+    if (phoneNumber[0] != '0') {  // Phone number must start with '0'
+        return 0; // 
+    }
+
+    for (int i = 0; i < length; i++) {
+        if (!isdigit((unsigned char)(phoneNumber[i]))) {
+            return 0; 
+        }
+    }
+
+    return 1; // Valid phone number
 }
