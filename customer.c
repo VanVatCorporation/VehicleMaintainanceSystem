@@ -56,3 +56,16 @@ int isValidPhoneNumber(char phoneNumber[]) {
 
     return 1; // Valid phone number
 }
+
+// Check for duplicate phone numbers
+int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[]) {
+    
+    for (int i = 0; i < customerCount; i++) {
+        if (strcmp(customers[i].phoneNumber, phoneNumber) == 0) {
+            return 1; // Return 1 if phone number already exists, otherwise 0
+        }
+    }
+
+    return 0; 
+}
+
