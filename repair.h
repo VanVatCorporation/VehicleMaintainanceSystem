@@ -1,7 +1,7 @@
 // Tạo phiếu, thêm dịch vụ vào phiếu, cập nhật trạng thái, tính tổng tiền
 
-#ifndef ORDER_H
-#define ORDER_H
+#ifndef REPAIR_H
+#define REPAIR_H
 
 #include <time.h>
 
