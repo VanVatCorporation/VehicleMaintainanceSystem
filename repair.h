@@ -13,7 +13,7 @@ typedef enum {
 
 typedef struct RepairOrder {
     char orderId[10];
-    char customerPhone[15];
+    char customerPhone[11];
     char symptom[100];3
     time_t createdDate;
     Status status;
