@@ -58,7 +58,7 @@ int isValidPhoneNumber(char phoneNumber[])
         return 0; //
     }
 
-    for (int i = 0; i < length; i++)
+    for (size_t i = 0; i < length; i++)
     {
         if (!isdigit((unsigned char)(phoneNumber[i])))
         {
@@ -87,7 +87,7 @@ int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNu
 // Generate a unique customer ID based on the current customer count
 void generateCustomerId(char customerId[], int customerCount)
 {
-    snprintf(customerId, ID_LENGTH, "C%06d", customerCount + 1); // Generate ID in format C0001, C0002, etc.
+    snprintf(customerId, ID_LENGTH, "CU%06d", customerCount + 1); // Generate ID in format CU000001, CU000002, etc.
 }
 
 // Search and display customer by phone number
@@ -147,12 +147,12 @@ void addCustomer(Customer customers[], int *customerCount)
         int i;
 
         printf("Enter full name: ");
-        scanf(" %[^\n]", newCustomer.fullName);
+        scanf(" %49[^\n]", newCustomer.fullName);
 
         // Validate that the full name is not empty or contains only whitespace
         for (i = 0; newCustomer.fullName[i] != '\0'; i++)
         {
-            if (!isspace(newCustomer.fullName[i]))
+            if (!isspace((unsigned char)(newCustomer.fullName[i])))
             {
                 break;
             }
@@ -172,7 +172,7 @@ void addCustomer(Customer customers[], int *customerCount)
     {
 
         printf("Enter phone number: ");
-        scanf("%s", newCustomer.phoneNumber);
+        scanf("%10s", newCustomer.phoneNumber);
 
         // Validate phone number format and check for duplicates
         if (!isValidPhoneNumber(newCustomer.phoneNumber))
@@ -194,12 +194,12 @@ void addCustomer(Customer customers[], int *customerCount)
         int i;
 
         printf("Enter car plate: ");
-        scanf("%[^\n]", newCustomer.carPlate);
+        scanf(" %19[^\n]", newCustomer.carPlate);
 
         // Validate that the car plate is not empty or contains only whitespace
         for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
         {
-            if (!isspace(newCustomer.carPlate[i]))
+            if (!isspace((unsigned char)(newCustomer.carPlate[i])))
             {
                 break;
             }
@@ -214,4 +214,33 @@ void addCustomer(Customer customers[], int *customerCount)
             break;
         }
     }
+
+    while (1) {
+        int i;
+
+        printf("Enter car type: ");
+        scanf(" %30[^\n]", newCustomer.carType);
+        
+        // Validate that the car type is not empty or contains only whitespace
+        for (i = 0; newCustomer.carType[i] != '\0'; i++) {
+            if (!isspace((unsigned char)(newCustomer.carType[i]))) {
+                break;
+            }
+        }
+
+        if (newCustomer.carType[i] == '\0') {
+            printf("Car type cannot be empty. Please try again.\n");
+        } else {
+            break;
+        }
+    }
+    generateCustomerId(newCustomer.customerId, *customerCount);
+    newCustomer.orderCount = 0;
+
+    customers[*customerCount] = newCustomer;
+    (*customerCount)++;
+
+    printf("Customer added successfully.\n");
+
 }
+

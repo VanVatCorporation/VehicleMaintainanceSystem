@@ -7,7 +7,7 @@
 #define NAME_LENGTH 50
 #define PHONE_LENGTH 11
 #define PLATE_LENGTH 20
-#define TYPE_LENGTH 20
+#define TYPE_LENGTH 31
 
 // === Data structure ===
 typedef struct {
