@@ -4,7 +4,8 @@
 #include "customer.h"
 
 // Display customer information
-void displayCustomer(Customer customer) { 
+void displayCustomer(Customer customer)
+{
     printf("\n===== Customer Information =====\n");
     printf("Customer ID : %s\n", customer.customerId);
     printf("Full Name   : %s\n", customer.fullName);
@@ -15,9 +16,12 @@ void displayCustomer(Customer customer) {
 }
 
 // Find customer index by phone number
-int findCustomerIndexByPhone(Customer customers[], int customerCount, char phoneNumber[]) { 
-    for (int i = 0; i < customerCount; i++) {
-        if (strcmp(customers[i].phoneNumber, phoneNumber) == 0) {
+int findCustomerIndexByPhone(Customer customers[], int customerCount, char phoneNumber[])
+{
+    for (int i = 0; i < customerCount; i++)
+    {
+        if (strcmp(customers[i].phoneNumber, phoneNumber) == 0)
+        {
             return i;
         }
     }
@@ -26,9 +30,12 @@ int findCustomerIndexByPhone(Customer customers[], int customerCount, char phone
 }
 
 // Find customer index by car plate
-int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPlate[]) { 
-    for (int i = 0; i < customerCount; i++) {
-        if (strcmp(customers[i].carPlate, carPlate) == 0) {
+int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPlate[])
+{
+    for (int i = 0; i < customerCount; i++)
+    {
+        if (strcmp(customers[i].carPlate, carPlate) == 0)
+        {
             return i;
         }
     }
@@ -37,20 +44,25 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
 }
 
 // Validate phone number format (simple validation)
-int isValidPhoneNumber(char phoneNumber[]) {
-    
+int isValidPhoneNumber(char phoneNumber[])
+{
+
     size_t length = strlen(phoneNumber);
-    if (length != 10) {
-        return 0; // Phone number must be exactly 10 digits 
+    if (length != 10)
+    {
+        return 0; // Phone number must be exactly 10 digits
     }
 
-    if (phoneNumber[0] != '0') {  // Phone number must start with '0'
-        return 0; // 
+    if (phoneNumber[0] != '0')
+    {             // Phone number must start with '0'
+        return 0; //
     }
 
-    for (int i = 0; i < length; i++) {
-        if (!isdigit((unsigned char)(phoneNumber[i]))) {
-            return 0; 
+    for (int i = 0; i < length; i++)
+    {
+        if (!isdigit((unsigned char)(phoneNumber[i])))
+        {
+            return 0;
         }
     }
 
@@ -58,25 +70,29 @@ int isValidPhoneNumber(char phoneNumber[]) {
 }
 
 // Check for duplicate phone numbers
-int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[]) {
-    
-    for (int i = 0; i < customerCount; i++) {
-        if (strcmp(customers[i].phoneNumber, phoneNumber) == 0) {
+int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[])
+{
+
+    for (int i = 0; i < customerCount; i++)
+    {
+        if (strcmp(customers[i].phoneNumber, phoneNumber) == 0)
+        {
             return 1; // Return 1 if phone number already exists, otherwise 0
         }
     }
 
-    return 0; 
+    return 0;
 }
 
-
 // Generate a unique customer ID based on the current customer count
-void generateCustomerId(char customerId[], int customerCount) {
+void generateCustomerId(char customerId[], int customerCount)
+{
     snprintf(customerId, ID_LENGTH, "C%06d", customerCount + 1); // Generate ID in format C0001, C0002, etc.
 }
 
 // Search and display customer by phone number
-void searchCustomerByPhone(Customer customers[], int customerCount) {
+void searchCustomerByPhone(Customer customers[], int customerCount)
+{
     char phoneNumber[PHONE_LENGTH];
 
     printf("Enter phone number: ");
@@ -84,15 +100,19 @@ void searchCustomerByPhone(Customer customers[], int customerCount) {
 
     int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
-    if (index == -1) {
+    if (index == -1)
+    {
         printf("Customer not found:\n");
-    } else {
+    }
+    else
+    {
         displayCustomer(customers[index]);
     }
 }
 
 // Search and display customer by car plate
-void searchCustomerByPlate(Customer customers[], int customerCount) {
+void searchCustomerByPlate(Customer customers[], int customerCount)
+{
     char carPlate[PLATE_LENGTH];
 
     printf("Enter car plate: ");
@@ -100,9 +120,98 @@ void searchCustomerByPlate(Customer customers[], int customerCount) {
 
     int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
 
-    if (index == -1) {
+    if (index == -1)
+    {
         printf("Customer not found.\n");
-    } else {
+    }
+    else
+    {
         displayCustomer(customers[index]);
+    }
+}
+
+// Add a new customer to the system
+void addCustomer(Customer customers[], int *customerCount)
+{
+    // Check if the customer list is full before adding a new customer
+    if (*customerCount >= MAX_CUSTOMERS)
+    {
+        printf("Customer list is full. Cannot add more customers.\n");
+        return;
+    }
+
+    Customer newCustomer;
+
+    while (1)
+    {
+        int i;
+
+        printf("Enter full name: ");
+        scanf(" %[^\n]", newCustomer.fullName);
+
+        // Validate that the full name is not empty or contains only whitespace
+        for (i = 0; newCustomer.fullName[i] != '\0'; i++)
+        {
+            if (!isspace(newCustomer.fullName[i]))
+            {
+                break;
+            }
+        }
+
+        if (newCustomer.fullName[i] == '\0')
+        {
+            printf("Full name cannot be empty. Please try again.\n");
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    while (1)
+    {
+
+        printf("Enter phone number: ");
+        scanf("%s", newCustomer.phoneNumber);
+
+        // Validate phone number format and check for duplicates
+        if (!isValidPhoneNumber(newCustomer.phoneNumber))
+        {
+            printf("Invalid phone number. Please try again.\n");
+        }
+        else if (isDuplicatePhoneNumber(customers, *customerCount, newCustomer.phoneNumber))
+        {
+            printf("Phone number already exists. Please enter another one.\n");
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    while (1)
+    {
+        int i;
+
+        printf("Enter car plate: ");
+        scanf("%[^\n]", newCustomer.carPlate);
+
+        // Validate that the car plate is not empty or contains only whitespace
+        for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
+        {
+            if (!isspace(newCustomer.carPlate[i]))
+            {
+                break;
+            }
+        }
+
+        if (newCustomer.carPlate[i] == '\0')
+        {
+            printf("Car plate cannot be empty. Please try again.\n");
+        }
+        else
+        {
+            break;
+        }
     }
 }
