@@ -36,6 +36,7 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
 // Validation functions
 int isValidPhoneNumber(char phoneNumber[]);
 int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[]);
+int isDuplicateCarPlate(Customer customers[], int customerCount, char carPlate[]);
 
 // Utility functions
 void generateCustomerId(char customerId[], int customerCount);

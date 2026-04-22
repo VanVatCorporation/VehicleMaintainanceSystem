@@ -84,6 +84,20 @@ int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNu
     return 0;
 }
 
+int isDuplicateCarPlate(Customer customers[], int customerCount, char carPlate[])
+{
+    int i;
+
+    for (i = 0; i < customerCount; i++)
+    {
+        if (strcmp(customers[i].carPlate, carPlate) == 0)
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
 // Generate a unique customer ID based on the current customer count
 void generateCustomerId(char customerId[], int customerCount)
 {
@@ -97,6 +111,13 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
 
     printf("Enter phone number: ");
     scanf("%10s", phoneNumber);
+
+    if (!isValidPhoneNumber(phoneNumber))
+{
+    printf("Invalid phone number.\n");
+    return;
+}
+
 
     int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
@@ -141,6 +162,7 @@ void addCustomer(Customer customers[], int *customerCount)
     }
 
     Customer newCustomer;
+    int ch;
 
     // Full name
     while (1)
@@ -175,6 +197,8 @@ void addCustomer(Customer customers[], int *customerCount)
 
         printf("Enter phone number: ");
         scanf("%10s", newCustomer.phoneNumber);
+        while ((ch = getchar()) != '\n' && ch != EOF)
+            ;
 
         // Validate phone number format and check for duplicates
         if (!isValidPhoneNumber(newCustomer.phoneNumber))
@@ -192,31 +216,34 @@ void addCustomer(Customer customers[], int *customerCount)
     }
 
     // Car plate
-    while (1)
+while (1)
+{
+    int i;
+
+    printf("Enter car plate: ");
+    scanf(" %19[^\n]", newCustomer.carPlate);
+
+    for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
     {
-        int i;
-
-        printf("Enter car plate: ");
-        scanf(" %19[^\n]", newCustomer.carPlate);
-
-        // Validate that the car plate is not empty or contains only whitespace
-        for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
-        {
-            if (!isspace((unsigned char)(newCustomer.carPlate[i])))
-            {
-                break;
-            }
-        }
-
-        if (newCustomer.carPlate[i] == '\0')
-        {
-            printf("Car plate cannot be empty. Please try again.\n");
-        }
-        else
+        if (!isspace((unsigned char)newCustomer.carPlate[i]))
         {
             break;
         }
     }
+
+    if (newCustomer.carPlate[i] == '\0')
+    {
+        printf("Car plate cannot be empty. Please try again.\n");
+    }
+    else if (isDuplicateCarPlate(customers, *customerCount, newCustomer.carPlate))
+    {
+        printf("Car plate already exists. Please enter another one.\n");
+    }
+    else
+    {
+        break;
+    }
+}
 
     // Car type
     while (1) {
@@ -250,60 +277,248 @@ void addCustomer(Customer customers[], int *customerCount)
 }
 
 // Update existing customer information
-void updateCustomer(Customer customers[], int *customerCount) {
+void updateCustomer(Customer customers[], int *customerCount)
+{
     char phoneNumber[PHONE_LENGTH];
+    char choiceInput[10];
     int index = -1;
     int choice;
+    int ch;
 
-    while (1) {
+    while (1)
+    {
         int attempts = 0;
-        
+
         // Allow the user up to 5 attempts to enter a valid phone number
-        while (attempts < 5) {
+        while (attempts < 5)
+        {
             printf("Enter phone number to update: ");
             scanf("%10s", phoneNumber);
+            while ((ch = getchar()) != '\n' && ch != EOF)
+                ;
+
+            if (!isValidPhoneNumber(phoneNumber))
+            {
+                attempts++;
+                printf("Invalid phone number. Please try again.\n");
+
+                if (attempts < 5)
+                {
+                    printf("Remaining attempts: %d\n", 5 - attempts);
+                }
+
+                continue;
+            }
 
             index = findCustomerIndexByPhone(customers, *customerCount, phoneNumber);
 
-            if (index != -1) {
+            if (index != -1)
+            {
                 break;
             }
 
             attempts++;
             printf("Customer not found.\n");
 
-            if (attempts < 5) {
+            if (attempts < 5)
+            {
                 printf("Remaining attempts: %d\n", 5 - attempts);
             }
         }
 
-        if (index != -1) {
+        if (index != -1)
+        {
             break;
         }
 
-        // After 5 failed attempts, provide options to the user
         printf("\nOptions:\n");
         printf("1. Try again\n");
         printf("2. Exit\n");
         printf("3. Add new customer\n");
         printf("Choose: ");
-        scanf("%d", &choice);
 
-        // Handle user choice
-        if (choice == 1) {
+        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        {
+            printf("Input error. Try again.\n");
             continue;
-        } else if (choice == 2) {
+        }
+
+        if (sscanf(choiceInput, "%d", &choice) != 1)
+        {
+            printf("Invalid choice. Try again.\n");
+            continue;
+        }
+
+        if (choice == 1)
+        {
+            continue;
+        }
+        else if (choice == 2)
+        {
             return;
-        } else if (choice == 3) {
+        }
+        else if (choice == 3)
+        {
             addCustomer(customers, customerCount);
             return;
-        } else {
+        }
+        else
+        {
             printf("Invalid choice. Try again.\n");
         }
     }
-    
+
     printf("Customer found. Proceeding to update...\n");
+    displayCustomer(customers[index]);
 
+    while ((ch = getchar()) != '\n' && ch != EOF)
+        ;
+    {
+        char newFullName[NAME_LENGTH];
+        int i;
+
+        printf("Current full name: %s\n", customers[index].fullName);
+
+        while (1)
+        {
+            printf("Enter new full name (press Enter to keep current): ");
+
+            if (fgets(newFullName, sizeof(newFullName), stdin) == NULL)
+            {
+                printf("Input error. Try again.\n");
+                continue;
+            }
+
+            newFullName[strcspn(newFullName, "\n")] = '\0';
+
+            if (strlen(newFullName) == 0)
+            {
+                break;
+            }
+
+            for (i = 0; newFullName[i] != '\0'; i++)
+            {
+                if (!isspace((unsigned char)newFullName[i]))
+                {
+                    break;
+                }
+            }
+
+            if (newFullName[i] == '\0')
+            {
+                printf("Full name cannot contain only spaces. Please try again.\n");
+            }
+            else
+            {
+                strcpy(customers[index].fullName, newFullName);
+                break;
+            }
+        }
+    }
+
+    {
+        char newCarType[TYPE_LENGTH];
+        int i;
+
+        printf("Current car type: %s\n", customers[index].carType);
+
+        while (1)
+        {
+            printf("Enter new car type (press Enter to keep current): ");
+
+            if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
+            {
+                printf("Input error. Try again.\n");
+                continue;
+            }
+
+            newCarType[strcspn(newCarType, "\n")] = '\0';
+
+            if (strlen(newCarType) == 0)
+            {
+                break;
+            }
+
+            for (i = 0; newCarType[i] != '\0'; i++)
+            {
+                if (!isspace((unsigned char)newCarType[i]))
+                {
+                    break;
+                }
+            }
+
+            if (newCarType[i] == '\0')
+            {
+                printf("Car type cannot contain only spaces. Please try again.\n");
+            }
+            else
+            {
+                strcpy(customers[index].carType, newCarType);
+                break;
+            }
+        }
+    }
+
+    {
+        char newCarPlate[PLATE_LENGTH];
+        int i, j, duplicate;
+
+        printf("Current car plate: %s\n", customers[index].carPlate);
+
+        while (1)
+        {
+            printf("Enter new car plate (press Enter to keep current): ");
+
+            if (fgets(newCarPlate, sizeof(newCarPlate), stdin) == NULL)
+            {
+                printf("Input error. Try again.\n");
+                continue;
+            }
+
+            newCarPlate[strcspn(newCarPlate, "\n")] = '\0';
+
+            if (strlen(newCarPlate) == 0)
+            {
+                break;
+            }
+
+            for (i = 0; newCarPlate[i] != '\0'; i++)
+            {
+                if (!isspace((unsigned char)newCarPlate[i]))
+                {
+                    break;
+                }
+            }
+
+            if (newCarPlate[i] == '\0')
+            {
+                printf("Car plate cannot contain only spaces. Please try again.\n");
+                continue;
+            }
+
+            duplicate = 0;
+            for (j = 0; j < *customerCount; j++)
+            {
+                if (j != index && strcmp(customers[j].carPlate, newCarPlate) == 0)
+                {
+                    duplicate = 1;
+                    break;
+                }
+            }
+
+            if (duplicate)
+            {
+                printf("Car plate already exists. Please try again.\n");
+            }
+            else
+            {
+                strcpy(customers[index].carPlate, newCarPlate);
+                break;
+            }
+        }
+    }
+
+    printf("Customer updated successfully.\n");
+    displayCustomer(customers[index]);
 }
-
    
