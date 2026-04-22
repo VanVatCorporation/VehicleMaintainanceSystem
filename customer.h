@@ -23,7 +23,7 @@ typedef struct {
 
 // Customer management functions
 void addCustomer(Customer customers[], int *customerCount);
-void updateCustomer(Customer customers[], int customerCount);
+void updateCustomer(Customer customers[], int *customerCount);
 void searchCustomerByPhone(Customer customers[], int customerCount);
 void searchCustomerByPlate(Customer customers[], int customerCount);
 void displayCustomer(Customer customer);

@@ -247,7 +247,63 @@ void addCustomer(Customer customers[], int *customerCount)
     (*customerCount)++;
 
     printf("Customer added successfully.\n");
+}
+
+// Update existing customer information
+void updateCustomer(Customer customers[], int *customerCount) {
+    char phoneNumber[PHONE_LENGTH];
+    int index = -1;
+    int choice;
+
+    while (1) {
+        int attempts = 0;
+        
+        // Allow the user up to 5 attempts to enter a valid phone number
+        while (attempts < 5) {
+            printf("Enter phone number to update: ");
+            scanf("%10s", phoneNumber);
+
+            index = findCustomerIndexByPhone(customers, *customerCount, phoneNumber);
+
+            if (index != -1) {
+                break;
+            }
+
+            attempts++;
+            printf("Customer not found.\n");
+
+            if (attempts < 5) {
+                printf("Remaining attempts: %d\n", 5 - attempts);
+            }
+        }
+
+        if (index != -1) {
+            break;
+        }
+
+        // After 5 failed attempts, provide options to the user
+        printf("\nOptions:\n");
+        printf("1. Try again\n");
+        printf("2. Exit\n");
+        printf("3. Add new customer\n");
+        printf("Choose: ");
+        scanf("%d", &choice);
+
+        // Handle user choice
+        if (choice == 1) {
+            continue;
+        } else if (choice == 2) {
+            return;
+        } else if (choice == 3) {
+            addCustomer(customers, customerCount);
+            return;
+        } else {
+            printf("Invalid choice. Try again.\n");
+        }
+    }
+    
+    printf("Customer found. Proceeding to update...\n");
 
 }
 
-// 
+   
