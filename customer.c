@@ -113,17 +113,16 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
     scanf("%10s", phoneNumber);
 
     if (!isValidPhoneNumber(phoneNumber))
-{
-    printf("Invalid phone number.\n");
-    return;
-}
-
+    {
+        printf("Invalid phone number.\n");
+        return;
+    }
 
     int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
     if (index == -1)
     {
-        printf("Customer not found:\n");
+        printf("Customer not found.\n");
     }
     else
     {
@@ -216,52 +215,58 @@ void addCustomer(Customer customers[], int *customerCount)
     }
 
     // Car plate
-while (1)
-{
-    int i;
-
-    printf("Enter car plate: ");
-    scanf(" %19[^\n]", newCustomer.carPlate);
-
-    for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
+    while (1)
     {
-        if (!isspace((unsigned char)newCustomer.carPlate[i]))
+        int i;
+
+        printf("Enter car plate: ");
+        scanf(" %19[^\n]", newCustomer.carPlate);
+
+        for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
+        {
+            if (!isspace((unsigned char)newCustomer.carPlate[i]))
+            {
+                break;
+            }
+        }
+
+        if (newCustomer.carPlate[i] == '\0')
+        {
+            printf("Car plate cannot be empty. Please try again.\n");
+        }
+        else if (isDuplicateCarPlate(customers, *customerCount, newCustomer.carPlate))
+        {
+            printf("Car plate already exists. Please enter another one.\n");
+        }
+        else
         {
             break;
         }
     }
 
-    if (newCustomer.carPlate[i] == '\0')
-    {
-        printf("Car plate cannot be empty. Please try again.\n");
-    }
-    else if (isDuplicateCarPlate(customers, *customerCount, newCustomer.carPlate))
-    {
-        printf("Car plate already exists. Please enter another one.\n");
-    }
-    else
-    {
-        break;
-    }
-}
-
     // Car type
-    while (1) {
+    while (1)
+    {
         int i;
 
         printf("Enter car type: ");
         scanf(" %30[^\n]", newCustomer.carType);
-        
+
         // Validate that the car type is not empty or contains only whitespace
-        for (i = 0; newCustomer.carType[i] != '\0'; i++) {
-            if (!isspace((unsigned char)(newCustomer.carType[i]))) {
+        for (i = 0; newCustomer.carType[i] != '\0'; i++)
+        {
+            if (!isspace((unsigned char)(newCustomer.carType[i])))
+            {
                 break;
             }
         }
 
-        if (newCustomer.carType[i] == '\0') {
+        if (newCustomer.carType[i] == '\0')
+        {
             printf("Car type cannot be empty. Please try again.\n");
-        } else {
+        }
+        else
+        {
             break;
         }
     }
@@ -371,8 +376,6 @@ void updateCustomer(Customer customers[], int *customerCount)
     printf("Customer found. Proceeding to update...\n");
     displayCustomer(customers[index]);
 
-    while ((ch = getchar()) != '\n' && ch != EOF)
-        ;
     {
         char newFullName[NAME_LENGTH];
         int i;
@@ -521,4 +524,3 @@ void updateCustomer(Customer customers[], int *customerCount)
     printf("Customer updated successfully.\n");
     displayCustomer(customers[index]);
 }
-   
