@@ -77,7 +77,7 @@ int calculateTotal(RepairOrder order){
     return total;
 }
 
-// update statusz
+// update status
 const char* getStatusText(Status status){
     switch(status){
         case TIEP_NHAN: return "Tiep nhan";
