@@ -96,7 +96,7 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
     char phoneNumber[PHONE_LENGTH];
 
     printf("Enter phone number: ");
-    scanf("%s", phoneNumber);
+    scanf("%10s", phoneNumber);
 
     int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
@@ -116,7 +116,7 @@ void searchCustomerByPlate(Customer customers[], int customerCount)
     char carPlate[PLATE_LENGTH];
 
     printf("Enter car plate: ");
-    scanf("%s", carPlate);
+    scanf("%19s", carPlate);
 
     int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
 
@@ -142,6 +142,7 @@ void addCustomer(Customer customers[], int *customerCount)
 
     Customer newCustomer;
 
+    // Full name
     while (1)
     {
         int i;
@@ -168,6 +169,7 @@ void addCustomer(Customer customers[], int *customerCount)
         }
     }
 
+    // Phone number
     while (1)
     {
 
@@ -189,6 +191,7 @@ void addCustomer(Customer customers[], int *customerCount)
         }
     }
 
+    // Car plate
     while (1)
     {
         int i;
@@ -215,6 +218,7 @@ void addCustomer(Customer customers[], int *customerCount)
         }
     }
 
+    // Car type
     while (1) {
         int i;
 
@@ -234,6 +238,8 @@ void addCustomer(Customer customers[], int *customerCount)
             break;
         }
     }
+
+    // Generate a unique customer ID and initialize order count
     generateCustomerId(newCustomer.customerId, *customerCount);
     newCustomer.orderCount = 0;
 
@@ -244,3 +250,4 @@ void addCustomer(Customer customers[], int *customerCount)
 
 }
 
+// 
