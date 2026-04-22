@@ -63,6 +63,8 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
 
     order.createdDate = time(NULL);
 
+    order.status = TIEP_NHAN;// trạng thái mặc định
+
     return order;
 }
 
@@ -75,6 +77,35 @@ int calculateTotal(RepairOrder order){
     return total;
 }
 
+// update statusz
+const char* getStatusText(Status status){
+    switch(status){
+        case TIEP_NHAN: return "Tiep nhan";
+        case DANG_SUA: return "Dang sua";
+        case HOAN_THANH: return "Hoan thanh";
+        default: return "Khong ro";
+    }
+}
+
+// cập nhật status
+void updateStatus(RepairOrder *order){
+    int choice;
+
+    printf("\nCap nhat trang thai:\n");
+    printf("1. Tiep nhan\n");
+    printf("2. Dang sua\n");
+    printf("3. Hoan thanh\n");
+    printf("Chon: ");
+    scanf("%d", &choice);
+
+    switch(choice){
+        case 1: order->status = TIEP_NHAN; break;
+        case 2: order->status = DANG_SUA; break;
+        case 3: order->status = HOAN_THANH; break;
+        default: printf("Khong hop le!\n");
+    }
+}
+
 // in phiếu
 void printRepairOrder(RepairOrder order){
     printf("\n=== THONG TIN PHIEU ===\n");
@@ -82,7 +113,7 @@ void printRepairOrder(RepairOrder order){
     printf("Phone: %s\n", order.customerPhone);
     printf("Symptom: %s\n", order.symptom);
     printf("Created: %s", ctime(&order.createdDate));
-
+    printf("Status: %s\n", getStatusText(order.status));
     printf("\nDanh sach dich vu:\n");
     for(int i = 0; i < order.itemCount; i++){
         printf("%d. %s - %d VND\n",

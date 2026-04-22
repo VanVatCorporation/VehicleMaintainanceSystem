@@ -40,4 +40,8 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
 void printRepairOrder(RepairOrder order);
 int calculateTotal(RepairOrder order);
 
+// status
+const char* getStatusText(Status status);
+void updateStatus(RepairOrder *order);
+
 #endif
