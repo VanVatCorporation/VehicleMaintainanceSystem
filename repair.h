@@ -1,28 +1,25 @@
-// Tạo phiếu, thêm dịch vụ vào phiếu, cập nhật trạng thái, tính tổng
-// tiền
-
 #ifndef REPAIR_H
 #define REPAIR_H
 
 #include <time.h>
 #include "customer.h"
 
-#define MAX_ITEMS 10
+#define MAX_ITEMS 20
 
-// trạng thái sửa
+// repair status
 typedef enum {
-    TIEP_NHAN,
-    DANG_SUA,
-    HOAN_THANH
+    RECEIVED,
+    UNDER_REPAIRED,
+    COMPLETE
 } Status;
 
-// dịch vụ
+// service
 typedef struct {
     char name[50];
     int price;
 } RepairItem;
 
-// phiếu sửa chữa
+// repair order
 typedef struct {
     char orderId[10];
     char customerPhone[11];
@@ -42,6 +39,6 @@ int calculateTotal(RepairOrder order);
 
 // status
 const char* getStatusText(Status status);
-void updateStatus(RepairOrder *order);
+RepairOrder updateStatus(RepairOrder order);
 
 #endif
