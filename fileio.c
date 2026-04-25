@@ -138,7 +138,7 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
 }
 
 // Invoice Export (.txt format)
-// Code structures are mine, but the UI (fprintf) are AI generated.
+// Code structures are mine, but the bill graphic (fprintf) are AI generated.
 
 void exportInvoice(RepairOrder order, Customer customer) {
   char filename[100];
