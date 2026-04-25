@@ -1,16 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include "customer.h"
 #include "repair.h"
 #include "fileio.h"
 
+// Global variables for signal handler access
+Customer customers[MAX_CUSTOMERS];
+int customerCount = 0;
+
+RepairOrder orders[1000]; 
+int orderCount = 0;
+
+// Signal handler to save data on abrupt closure
+void handleExit(int sig) {
+    printf("\nDetected signal %d. Saving data and exiting...\n", sig);
+    saveCustomers(customers, customerCount);
+    saveRepairOrders(orders, orderCount);
+    exit(0);
+}
+
 int main() {
-    Customer customers[MAX_CUSTOMERS];
-    int customerCount = 0;
-    
-    RepairOrder orders[1000]; // Assuming a max number of orders
-    int orderCount = 0;
+    // Register signals
+    signal(SIGINT, handleExit);  // Ctrl+C
+    signal(SIGTERM, handleExit); // Termination request
+    signal(SIGHUP, handleExit);  // Terminal closed
 
     // Mission 11: Read data on startup
     loadCustomers(customers, &customerCount);
@@ -26,7 +41,11 @@ int main() {
         printf("2. Repair Order Management\n");
         printf("3. Exit\n");
         printf("Choose: ");
-        scanf("%d", &choice);
+        if (scanf("%d", &choice) != 1) {
+            // Handle non-numeric input to prevent infinite loop
+            while (getchar() != '\n');
+            continue;
+        }
         getchar();
 
         if (choice == 1) {
@@ -37,7 +56,10 @@ int main() {
             printf("4. Search by Plate\n");
             printf("Back: 0\n");
             int subChoice;
-            scanf("%d", &subChoice);
+            if (scanf("%d", &subChoice) != 1) {
+                while (getchar() != '\n');
+                continue;
+            }
             getchar();
 
             switch (subChoice) {
@@ -53,17 +75,19 @@ int main() {
             printf("2. View/Update Order Status\n");
             printf("Back: 0\n");
             int subChoice;
-            scanf("%d", &subChoice);
+            if (scanf("%d", &subChoice) != 1) {
+                while (getchar() != '\n');
+                continue;
+            }
             getchar();
 
             if (subChoice == 1) {
                 RepairOrder newOrder = createRepairOrder(orderCount + 1, customers, customerCount);
                 orders[orderCount++] = newOrder;
-                saveRepairOrders(orders, orderCount);
             } else if (subChoice == 2) {
                 char orderId[10];
                 printf("Enter Order ID: ");
-                scanf("%s", orderId);
+                scanf("%9s", orderId);
                 int found = -1;
                 for (int i = 0; i < orderCount; i++) {
                     if (strcmp(orders[i].orderId, orderId) == 0) {
@@ -74,7 +98,6 @@ int main() {
                 if (found != -1) {
                     printRepairOrder(orders[found]);
                     orders[found] = updateStatus(orders[found]);
-                    saveRepairOrders(orders, orderCount);
                     
                     // Mission 14: Export invoice if complete
                     if (orders[found].status == COMPLETE) {
@@ -88,7 +111,7 @@ int main() {
                 }
             }
         } else if (choice == 3) {
-            break;
+            handleExit(0); // Normal exit
         }
     }
 
