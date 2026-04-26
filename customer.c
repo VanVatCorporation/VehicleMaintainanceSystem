@@ -4,17 +4,19 @@
 #include "customer.h"
 
 // Display customer information
-void displayCustomer(Customer customer)
+void displayCustomer(Customer c)
 {
-    printf("\n===== Customer Information =====\n");
-    printf("Customer ID : %s\n", customer.customerId);
-    printf("Full Name   : %s\n", customer.fullName);
-    printf("Phone Number: %s\n", customer.phoneNumber);
-    printf("Car Plate   : %s\n", customer.carPlate);
-    printf("Car Type    : %s\n", customer.carType);
-    printf("Order Count : %d\n", customer.orderCount);
+    printf("\n=========================================\n");
+    printf("| %-15s | %-20s |\n", "Field", "Value");
+    printf("=========================================\n");
+    printf("| %-15s | %-20s |\n", "Customer ID", c.customerId);
+    printf("| %-15s | %-20s |\n", "Full Name", c.fullName);
+    printf("| %-15s | %-20s |\n", "Phone", c.phoneNumber);
+    printf("| %-15s | %-20s |\n", "Car Plate", c.carPlate);
+    printf("| %-15s | %-20s |\n", "Car Type", c.carType);
+    printf("| %-15s | %-20d |\n", "Orders", c.orderCount);
+    printf("=========================================\n");
 }
-
 // Find customer index by phone number
 int findCustomerIndexByPhone(Customer customers[], int customerCount, char phoneNumber[])
 {
@@ -103,30 +105,70 @@ void generateCustomerId(char customerId[], int customerCount)
 {
     snprintf(customerId, ID_LENGTH, "CU%06d", customerCount + 1); // Generate ID in format CU000001, CU000002, etc.
 }
-
 // Search and display customer by phone number
 void searchCustomerByPhone(Customer customers[], int customerCount)
 {
     char phoneNumber[PHONE_LENGTH];
+    char choiceInput[10];
+    int choice;
+    int ch;
 
-    printf("Enter phone number: ");
-    scanf("%10s", phoneNumber);
-
-    if (!isValidPhoneNumber(phoneNumber))
+    while (1)
     {
-        printf("Invalid phone number.\n");
-        return;
-    }
+        printf("Enter phone number: ");
+        scanf("%10s", phoneNumber);
+        while ((ch = getchar()) != '\n' && ch != EOF)
+            ;
 
-    int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
+        if (!isValidPhoneNumber(phoneNumber))
+        {
+            printf("Invalid phone number.\n");
+        }
+        else
+        {
+            int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
-    if (index == -1)
-    {
-        printf("Customer not found.\n");
-    }
-    else
-    {
-        displayCustomer(customers[index]);
+            if (index == -1)
+            {
+                printf("Customer not found.\n");
+            }
+            else
+            {
+                displayCustomer(customers[index]);
+                return;
+            }
+        }
+
+        printf("\nOptions:\n");
+        printf("1. Try again\n");
+        printf("2. Exit search\n");
+        printf("Choose: ");
+
+        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        {
+            printf("Input error. Exit search.\n");
+            return;
+        }
+
+        if (sscanf(choiceInput, "%d", &choice) != 1)
+        {
+            printf("Invalid choice. Exit search.\n");
+            return;
+        }
+
+        if (choice == 1)
+        {
+            continue;
+        }
+        else if (choice == 2)
+        {
+            return;
+        }
+        else
+        {
+            printf("Invalid choice. Exit search.\n");
+            return;
+        }
     }
 }
 
@@ -134,19 +176,59 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
 void searchCustomerByPlate(Customer customers[], int customerCount)
 {
     char carPlate[PLATE_LENGTH];
+    char choiceInput[10];
+    int choice;
+    int ch;
 
-    printf("Enter car plate: ");
-    scanf("%19s", carPlate);
-
-    int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
-
-    if (index == -1)
+    while (1)
     {
-        printf("Customer not found.\n");
-    }
-    else
-    {
-        displayCustomer(customers[index]);
+        printf("Enter car plate: ");
+        scanf("%19s", carPlate);
+        while ((ch = getchar()) != '\n' && ch != EOF)
+            ;
+
+        int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
+
+        if (index == -1)
+        {
+            printf("Customer not found.\n");
+        }
+        else
+        {
+            displayCustomer(customers[index]);
+            return;
+        }
+
+        printf("\nOptions:\n");
+        printf("1. Try again\n");
+        printf("2. Exit search\n");
+        printf("Choose: ");
+
+        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        {
+            printf("Input error. Exit search.\n");
+            return;
+        }
+
+        if (sscanf(choiceInput, "%d", &choice) != 1)
+        {
+            printf("Invalid choice. Exit search.\n");
+            return;
+        }
+
+        if (choice == 1)
+        {
+            continue;
+        }
+        else if (choice == 2)
+        {
+            return;
+        }
+        else
+        {
+            printf("Invalid choice. Exit search.\n");
+            return;
+        }
     }
 }
 
@@ -375,16 +457,19 @@ void updateCustomer(Customer customers[], int *customerCount)
 
     printf("Customer found. Proceeding to update...\n");
     displayCustomer(customers[index]);
-
+    
  while (1)
     {
-        printf("\nUpdate options:\n");
-        printf("1. Full name\n");
-        printf("2. Car type\n");
-        printf("3. Car plate\n");
-        printf("4. Finish update\n");
-        printf("Choose information to update: ");
-
+    printf("\n=================================\n");
+    printf("         UPDATE MENU\n");
+    printf("=================================\n");
+    printf("| %-2d | %-20s |\n", 1, "Full name");
+    printf("| %-2d | %-20s |\n", 2, "Car plate");
+    printf("| %-2d | %-20s |\n", 3, "Car type");
+    printf("| %-2d | %-20s |\n", 4, "Finish update");
+    printf("=================================\n");
+    printf("Choose: ");
+ 
         if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
         {
             printf("Input error. Try again.\n");
@@ -397,6 +482,7 @@ void updateCustomer(Customer customers[], int *customerCount)
             continue;
         }
 
+        // Update full name
         if (choice == 1)
         {
             char newFullName[NAME_LENGTH];
@@ -404,7 +490,7 @@ void updateCustomer(Customer customers[], int *customerCount)
 
             printf("Current full name: %s\n", customers[index].fullName);
 
-            while (1)
+            while (1) // Loop until a valid full name is entered or the user chooses to keep the current name
             {
                 printf("Enter new full name (press Enter to keep current): ");
 
@@ -441,58 +527,16 @@ void updateCustomer(Customer customers[], int *customerCount)
                 }
             }
         }
+
+        // Update car plate
         else if (choice == 2)
-        {
-            char newCarType[TYPE_LENGTH];
-            int i;
-
-            printf("Current car type: %s\n", customers[index].carType);
-
-            while (1)
-            {
-                printf("Enter new car type (press Enter to keep current): ");
-
-                if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
-                {
-                    printf("Input error. Try again.\n");
-                    continue;
-                }
-
-                newCarType[strcspn(newCarType, "\n")] = '\0';
-
-                if (strlen(newCarType) == 0)
-                {
-                    break;
-                }
-
-                for (i = 0; newCarType[i] != '\0'; i++)
-                {
-                    if (!isspace((unsigned char)newCarType[i]))
-                    {
-                        break;
-                    }
-                }
-
-                if (newCarType[i] == '\0')
-                {
-                    printf("Car type cannot contain only spaces. Please try again.\n");
-                }
-                else
-                {
-                    strcpy(customers[index].carType, newCarType);
-                    printf("Car type updated.\n");
-                    break;
-                }
-            }
-        }
-        else if (choice == 3)
         {
             char newCarPlate[PLATE_LENGTH];
             int i, j, duplicate;
 
             printf("Current car plate: %s\n", customers[index].carPlate);
 
-            while (1)
+            while (1) // Loop until a valid car plate is entered or the user chooses to keep the current plate
             {
                 printf("Enter new car plate (press Enter to keep current): ");
 
@@ -545,6 +589,53 @@ void updateCustomer(Customer customers[], int *customerCount)
                 }
             }
         }
+
+        // Update car type
+        else if (choice == 3)
+        {
+            char newCarType[TYPE_LENGTH];
+            int i;
+
+            printf("Current car type: %s\n", customers[index].carType);
+
+            while (1) // Loop until a valid car type is entered or the user chooses to keep the current type
+            {
+                printf("Enter new car type (press Enter to keep current): ");
+
+                if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
+                {
+                    printf("Input error. Try again.\n");
+                    continue;
+                }
+
+                newCarType[strcspn(newCarType, "\n")] = '\0';
+
+                if (strlen(newCarType) == 0)
+                {
+                    break;
+                }
+
+                for (i = 0; newCarType[i] != '\0'; i++)
+                {
+                    if (!isspace((unsigned char)newCarType[i]))
+                    {
+                        break;
+                    }
+                }
+
+                if (newCarType[i] == '\0')
+                {
+                    printf("Car type cannot contain only spaces. Please try again.\n");
+                }
+                else
+                {
+                    strcpy(customers[index].carType, newCarType);
+                    printf("Car type updated.\n");
+                    break;
+                }
+            }
+        }
+        // Finish update
         else if (choice == 4)
         {
             break;
@@ -556,3 +647,5 @@ void updateCustomer(Customer customers[], int *customerCount)
     }
     printf("Customer updated successfully.\n");
     displayCustomer(customers[index]);
+    printf("------------------------------\n");
+}    
