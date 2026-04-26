@@ -4,7 +4,7 @@
 #include <time.h>
 #include "customer.h"
 
-#define MAX_ITEMS 20
+#define MAX_ITEMS 50
 
 // repair status
 typedef enum {
@@ -40,5 +40,10 @@ int calculateTotal(RepairOrder order);
 // status
 const char* getStatusText(Status status);
 RepairOrder updateStatus(RepairOrder order);
+
+// view and filter
+void viewRepairOrderDetail(RepairOrder order, Customer customers[], int customerCount);
+void listRepairOrders(RepairOrder orders[], int orderCount);
+void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount);
 
 #endif
