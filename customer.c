@@ -376,151 +376,183 @@ void updateCustomer(Customer customers[], int *customerCount)
     printf("Customer found. Proceeding to update...\n");
     displayCustomer(customers[index]);
 
+ while (1)
     {
-        char newFullName[NAME_LENGTH];
-        int i;
+        printf("\nUpdate options:\n");
+        printf("1. Full name\n");
+        printf("2. Car type\n");
+        printf("3. Car plate\n");
+        printf("4. Finish update\n");
+        printf("Choose information to update: ");
 
-        printf("Current full name: %s\n", customers[index].fullName);
-
-        while (1)
+        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
         {
-            printf("Enter new full name (press Enter to keep current): ");
+            printf("Input error. Try again.\n");
+            continue;
+        }
 
-            if (fgets(newFullName, sizeof(newFullName), stdin) == NULL)
+        if (sscanf(choiceInput, "%d", &choice) != 1)
+        {
+            printf("Invalid choice. Try again.\n");
+            continue;
+        }
+
+        if (choice == 1)
+        {
+            char newFullName[NAME_LENGTH];
+            int i;
+
+            printf("Current full name: %s\n", customers[index].fullName);
+
+            while (1)
             {
-                printf("Input error. Try again.\n");
-                continue;
-            }
+                printf("Enter new full name (press Enter to keep current): ");
 
-            newFullName[strcspn(newFullName, "\n")] = '\0';
+                if (fgets(newFullName, sizeof(newFullName), stdin) == NULL)
+                {
+                    printf("Input error. Try again.\n");
+                    continue;
+                }
 
-            if (strlen(newFullName) == 0)
-            {
-                break;
-            }
+                newFullName[strcspn(newFullName, "\n")] = '\0';
 
-            for (i = 0; newFullName[i] != '\0'; i++)
-            {
-                if (!isspace((unsigned char)newFullName[i]))
+                if (strlen(newFullName) == 0)
                 {
                     break;
                 }
-            }
 
-            if (newFullName[i] == '\0')
-            {
-                printf("Full name cannot contain only spaces. Please try again.\n");
-            }
-            else
-            {
-                strcpy(customers[index].fullName, newFullName);
-                break;
+                for (i = 0; newFullName[i] != '\0'; i++)
+                {
+                    if (!isspace((unsigned char)newFullName[i]))
+                    {
+                        break;
+                    }
+                }
+
+                if (newFullName[i] == '\0')
+                {
+                    printf("Full name cannot contain only spaces. Please try again.\n");
+                }
+                else
+                {
+                    strcpy(customers[index].fullName, newFullName);
+                    printf("Full name updated.\n");
+                    break;
+                }
             }
         }
-    }
-
-    {
-        char newCarType[TYPE_LENGTH];
-        int i;
-
-        printf("Current car type: %s\n", customers[index].carType);
-
-        while (1)
+        else if (choice == 2)
         {
-            printf("Enter new car type (press Enter to keep current): ");
+            char newCarType[TYPE_LENGTH];
+            int i;
 
-            if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
+            printf("Current car type: %s\n", customers[index].carType);
+
+            while (1)
             {
-                printf("Input error. Try again.\n");
-                continue;
-            }
+                printf("Enter new car type (press Enter to keep current): ");
 
-            newCarType[strcspn(newCarType, "\n")] = '\0';
+                if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
+                {
+                    printf("Input error. Try again.\n");
+                    continue;
+                }
 
-            if (strlen(newCarType) == 0)
-            {
-                break;
-            }
+                newCarType[strcspn(newCarType, "\n")] = '\0';
 
-            for (i = 0; newCarType[i] != '\0'; i++)
-            {
-                if (!isspace((unsigned char)newCarType[i]))
+                if (strlen(newCarType) == 0)
                 {
                     break;
                 }
-            }
 
-            if (newCarType[i] == '\0')
-            {
-                printf("Car type cannot contain only spaces. Please try again.\n");
-            }
-            else
-            {
-                strcpy(customers[index].carType, newCarType);
-                break;
+                for (i = 0; newCarType[i] != '\0'; i++)
+                {
+                    if (!isspace((unsigned char)newCarType[i]))
+                    {
+                        break;
+                    }
+                }
+
+                if (newCarType[i] == '\0')
+                {
+                    printf("Car type cannot contain only spaces. Please try again.\n");
+                }
+                else
+                {
+                    strcpy(customers[index].carType, newCarType);
+                    printf("Car type updated.\n");
+                    break;
+                }
             }
         }
-    }
-
-    {
-        char newCarPlate[PLATE_LENGTH];
-        int i, j, duplicate;
-
-        printf("Current car plate: %s\n", customers[index].carPlate);
-
-        while (1)
+        else if (choice == 3)
         {
-            printf("Enter new car plate (press Enter to keep current): ");
+            char newCarPlate[PLATE_LENGTH];
+            int i, j, duplicate;
 
-            if (fgets(newCarPlate, sizeof(newCarPlate), stdin) == NULL)
+            printf("Current car plate: %s\n", customers[index].carPlate);
+
+            while (1)
             {
-                printf("Input error. Try again.\n");
-                continue;
-            }
+                printf("Enter new car plate (press Enter to keep current): ");
 
-            newCarPlate[strcspn(newCarPlate, "\n")] = '\0';
+                if (fgets(newCarPlate, sizeof(newCarPlate), stdin) == NULL)
+                {
+                    printf("Input error. Try again.\n");
+                    continue;
+                }
 
-            if (strlen(newCarPlate) == 0)
-            {
-                break;
-            }
+                newCarPlate[strcspn(newCarPlate, "\n")] = '\0';
 
-            for (i = 0; newCarPlate[i] != '\0'; i++)
-            {
-                if (!isspace((unsigned char)newCarPlate[i]))
+                if (strlen(newCarPlate) == 0)
                 {
                     break;
                 }
-            }
 
-            if (newCarPlate[i] == '\0')
-            {
-                printf("Car plate cannot contain only spaces. Please try again.\n");
-                continue;
-            }
-
-            duplicate = 0;
-            for (j = 0; j < *customerCount; j++)
-            {
-                if (j != index && strcmp(customers[j].carPlate, newCarPlate) == 0)
+                for (i = 0; newCarPlate[i] != '\0'; i++)
                 {
-                    duplicate = 1;
+                    if (!isspace((unsigned char)newCarPlate[i]))
+                    {
+                        break;
+                    }
+                }
+
+                if (newCarPlate[i] == '\0')
+                {
+                    printf("Car plate cannot contain only spaces. Please try again.\n");
+                    continue;
+                }
+
+                duplicate = 0;
+                for (j = 0; j < *customerCount; j++)
+                {
+                    if (j != index && strcmp(customers[j].carPlate, newCarPlate) == 0)
+                    {
+                        duplicate = 1;
+                        break;
+                    }
+                }
+
+                if (duplicate)
+                {
+                    printf("Car plate already exists. Please try again.\n");
+                }
+                else
+                {
+                    strcpy(customers[index].carPlate, newCarPlate);
+                    printf("Car plate updated.\n");
                     break;
                 }
-            }
-
-            if (duplicate)
-            {
-                printf("Car plate already exists. Please try again.\n");
-            }
-            else
-            {
-                strcpy(customers[index].carPlate, newCarPlate);
-                break;
             }
         }
+        else if (choice == 4)
+        {
+            break;
+        }
+        else
+        {
+            printf("Invalid choice. Try again.\n");
+        }
     }
-
     printf("Customer updated successfully.\n");
     displayCustomer(customers[index]);
-}
