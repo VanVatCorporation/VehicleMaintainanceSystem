@@ -494,19 +494,23 @@ void updateCustomer(Customer customers[], int *customerCount)
             {
                 printf("Enter new full name (press Enter to keep current): ");
 
+           
                 if (fgets(newFullName, sizeof(newFullName), stdin) == NULL)
                 {
                     printf("Input error. Try again.\n");
                     continue;
                 }
 
+               
                 newFullName[strcspn(newFullName, "\n")] = '\0';
 
+            
                 if (strlen(newFullName) == 0)
                 {
                     break;
                 }
 
+ 
                 for (i = 0; newFullName[i] != '\0'; i++)
                 {
                     if (!isspace((unsigned char)newFullName[i]))
@@ -528,7 +532,7 @@ void updateCustomer(Customer customers[], int *customerCount)
             }
         }
 
-        // Update car plate
+                // Update car plate
         else if (choice == 2)
         {
             char newCarPlate[PLATE_LENGTH];
@@ -536,7 +540,7 @@ void updateCustomer(Customer customers[], int *customerCount)
 
             printf("Current car plate: %s\n", customers[index].carPlate);
 
-            while (1) // Loop until a valid car plate is entered or the user chooses to keep the current plate
+            while (1)
             {
                 printf("Enter new car plate (press Enter to keep current): ");
 
@@ -645,7 +649,8 @@ void updateCustomer(Customer customers[], int *customerCount)
             printf("Invalid choice. Try again.\n");
         }
     }
+    
     printf("Customer updated successfully.\n");
     displayCustomer(customers[index]);
     printf("------------------------------\n");
-}    
+}
