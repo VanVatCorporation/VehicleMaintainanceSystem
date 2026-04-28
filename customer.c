@@ -2,25 +2,313 @@
 #include <string.h>
 #include <ctype.h>
 #include "customer.h"
+#include "utils.h"
+
+#define INPUT_LENGTH 100
+#define MAX_UPDATE_ATTEMPTS 5
+
+static int isBlank(char value[])
+{
+    return value[0] == '\0';
+}
+
+static int equalsIgnoreCase(char first[], char second[])
+{
+    int i = 0;
+
+    while (first[i] != '\0' && second[i] != '\0')
+    {
+        if (toupper((unsigned char)first[i]) != toupper((unsigned char)second[i]))
+        {
+            return 0;
+        }
+
+        i++;
+    }
+
+    return first[i] == '\0' && second[i] == '\0';
+}
+
+// Display options after a failed search.
+static int askSearchOption(void)
+{
+    int choice;
+
+    printSectionTitle("SEARCH OPTIONS");
+    printMenuOption(1, "Try again");
+    printMenuOption(2, "Exit search");
+    printf("\nSelect option: ");
+
+    if (!readInt(&choice))
+    {
+        printError("Invalid choice. Exit search.");
+        return 0;
+    }
+
+    if (choice == 1)
+    {
+        return 1;
+    }
+
+    if (choice == 2)
+    {
+        return 0;
+    }
+
+    printError("Invalid choice. Exit search.");
+    return 0;
+}
+
+static int isDuplicateCarPlateExcept(Customer customers[], int customerCount, char carPlate[], int exceptIndex)
+{
+    int i;
+
+    for (i = 0; i < customerCount; i++)
+    {
+        if (i != exceptIndex && equalsIgnoreCase(customers[i].carPlate, carPlate))
+        {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int inputFullName(char fullName[], char prompt[], int allowEmpty)
+{
+    char input[INPUT_LENGTH];
+
+    while (1)
+    {
+        printf("%s", prompt);
+
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (allowEmpty && input[0] == '\0')
+        {
+            return 0;
+        }
+
+        if (strlen(input) >= NAME_LENGTH)
+        {
+            printError("Full name is too long. Please try again.");
+        }
+        else if (!isValidFullName(input))
+        {
+            printError("Full name cannot be empty or contain digits. Please try again.");
+        }
+        else
+        {
+            strcpy(fullName, input);
+            return 1;
+        }
+    }
+}
+
+static int inputPhoneNumber(char phoneNumber[], Customer customers[], int customerCount)
+{
+    char input[INPUT_LENGTH];
+
+    while (1)
+    {
+        printf("Enter phone number: ");
+
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        // Validate phone number format and check for duplicates.
+        if (!isValidPhoneNumber(input))
+        {
+            printError("Invalid phone number. Please try again.");
+        }
+        else if (isDuplicatePhoneNumber(customers, customerCount, input))
+        {
+            printError("Phone number already exists. Please enter another one.");
+        }
+        else
+        {
+            strcpy(phoneNumber, input);
+            return 1;
+        }
+    }
+}
+
+static int inputCarPlate(char carPlate[], char prompt[], int allowEmpty, Customer customers[], int customerCount, int exceptIndex)
+{
+    char input[INPUT_LENGTH];
+
+    while (1)
+    {
+        printf("%s", prompt);
+
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (allowEmpty && input[0] == '\0')
+        {
+            return 0;
+        }
+
+        normalizeCarPlate(input);
+
+        if (strlen(input) >= PLATE_LENGTH)
+        {
+            printError("Car plate is too long. Please try again.");
+        }
+        else if (isBlank(input))
+        {
+            printError("Car plate cannot be empty. Please try again.");
+        }
+        else if (!isValidCarPlate(input))
+        {
+            printError("Invalid car plate. Use format like 30A-123.45 or 29-AA 123.45.");
+        }
+        else if (isDuplicateCarPlateExcept(customers, customerCount, input, exceptIndex))
+        {
+            printError("Car plate already exists. Please enter another one.");
+        }
+        else
+        {
+            strcpy(carPlate, input);
+            return 1;
+        }
+    }
+}
+
+static int inputCarType(char carType[], char prompt[], int allowEmpty)
+{
+    char input[INPUT_LENGTH];
+
+    while (1)
+    {
+        printf("%s", prompt);
+
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (allowEmpty && input[0] == '\0')
+        {
+            return 0;
+        }
+
+        if (strlen(input) >= TYPE_LENGTH)
+        {
+            printError("Car type is too long. Please try again.");
+        }
+        else if (isBlank(input))
+        {
+            printError("Car type cannot be empty. Please try again.");
+        }
+        else
+        {
+            strcpy(carType, input);
+            return 1;
+        }
+    }
+}
+
+static int findCustomerForUpdate(Customer customers[], int customerCount)
+{
+    char phoneNumber[INPUT_LENGTH];
+    int attempts = 0;
+    int index;
+
+    // Allow the user up to 5 attempts to enter a valid phone number.
+    while (attempts < MAX_UPDATE_ATTEMPTS)
+    {
+        printf("Enter phone number to update: ");
+
+        if (!readLine(phoneNumber, sizeof(phoneNumber)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (!isValidPhoneNumber(phoneNumber))
+        {
+            attempts++;
+            printError("Invalid phone number. Please try again.");
+        }
+        else
+        {
+            index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
+
+            if (index != -1)
+            {
+                return index;
+            }
+
+            attempts++;
+            printError("Customer not found.");
+        }
+
+        if (attempts < MAX_UPDATE_ATTEMPTS)
+        {
+            printf("[INFO] Remaining attempts: %d\n", MAX_UPDATE_ATTEMPTS - attempts);
+        }
+    }
+
+    return -1;
+}
+
+static void displayUpdateMenu(void)
+{
+    printSectionTitle("UPDATE CUSTOMER");
+    printMenuOption(1, "Full name");
+    printMenuOption(2, "Car plate");
+    printMenuOption(3, "Car type");
+    printMenuOption(4, "Finish update");
+    printf("\nSelect option: ");
+}
+
+static void printCustomerDivider(void)
+{
+    printf("+------------------+-------------------------------------------------+\n");
+}
+
+static void printCustomerTextRow(const char field[], const char value[])
+{
+    printf("| %-16s | %-47.47s |\n", field, value);
+}
+
+static void printCustomerIntRow(const char field[], int value)
+{
+    printf("| %-16s | %-47d |\n", field, value);
+}
 
 // Display customer information
 void displayCustomer(Customer c)
 {
-    printf("\n=========================================\n");
-    printf("| %-15s | %-20s |\n", "Field", "Value");
-    printf("=========================================\n");
-    printf("| %-15s | %-20s |\n", "Customer ID", c.customerId);
-    printf("| %-15s | %-20s |\n", "Full Name", c.fullName);
-    printf("| %-15s | %-20s |\n", "Phone", c.phoneNumber);
-    printf("| %-15s | %-20s |\n", "Car Plate", c.carPlate);
-    printf("| %-15s | %-20s |\n", "Car Type", c.carType);
-    printf("| %-15s | %-20d |\n", "Orders", c.orderCount);
-    printf("=========================================\n");
+    printBoxTitle("CUSTOMER PROFILE", 70);
+    printCustomerDivider();
+    printCustomerTextRow("Customer ID", c.customerId);
+    printCustomerTextRow("Full name", c.fullName);
+    printCustomerTextRow("Phone", c.phoneNumber);
+    printCustomerTextRow("Car plate", c.carPlate);
+    printCustomerTextRow("Car type", c.carType);
+    printCustomerIntRow("Orders", c.orderCount);
+    printCustomerDivider();
 }
+
 // Find customer index by phone number
 int findCustomerIndexByPhone(Customer customers[], int customerCount, char phoneNumber[])
 {
-    for (int i = 0; i < customerCount; i++)
+    int i;
+
+    for (i = 0; i < customerCount; i++)
     {
         if (strcmp(customers[i].phoneNumber, phoneNumber) == 0)
         {
@@ -34,9 +322,11 @@ int findCustomerIndexByPhone(Customer customers[], int customerCount, char phone
 // Find customer index by car plate
 int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPlate[])
 {
-    for (int i = 0; i < customerCount; i++)
+    int i;
+
+    for (i = 0; i < customerCount; i++)
     {
-        if (strcmp(customers[i].carPlate, carPlate) == 0)
+        if (equalsIgnoreCase(customers[i].carPlate, carPlate))
         {
             return i;
         }
@@ -45,41 +335,16 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
     return -1;
 }
 
-// Validate phone number format (simple validation)
-int isValidPhoneNumber(char phoneNumber[])
-{
-
-    size_t length = strlen(phoneNumber);
-    if (length != 10)
-    {
-        return 0; // Phone number must be exactly 10 digits
-    }
-
-    if (phoneNumber[0] != '0')
-    {             // Phone number must start with '0'
-        return 0; //
-    }
-
-    for (size_t i = 0; i < length; i++)
-    {
-        if (!isdigit((unsigned char)(phoneNumber[i])))
-        {
-            return 0;
-        }
-    }
-
-    return 1; // Valid phone number
-}
-
 // Check for duplicate phone numbers
 int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[])
 {
+    int i;
 
-    for (int i = 0; i < customerCount; i++)
+    for (i = 0; i < customerCount; i++)
     {
         if (strcmp(customers[i].phoneNumber, phoneNumber) == 0)
         {
-            return 1; // Return 1 if phone number already exists, otherwise 0
+            return 1;
         }
     }
 
@@ -88,85 +353,63 @@ int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNu
 
 int isDuplicateCarPlate(Customer customers[], int customerCount, char carPlate[])
 {
-    int i;
-
-    for (i = 0; i < customerCount; i++)
-    {
-        if (strcmp(customers[i].carPlate, carPlate) == 0)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
+    return isDuplicateCarPlateExcept(customers, customerCount, carPlate, -1);
 }
+
 // Generate a unique customer ID based on the current customer count
 void generateCustomerId(char customerId[], int customerCount)
 {
-    snprintf(customerId, ID_LENGTH, "CU%06d", customerCount + 1); // Generate ID in format CU000001, CU000002, etc.
+    int nextId = customerCount + 1;
+
+    if (nextId < 0)
+    {
+        nextId = 0;
+    }
+    else if (nextId > 999999)
+    {
+        nextId = 999999;
+    }
+
+    snprintf(customerId, ID_LENGTH, "CU%06d", nextId);
 }
+
 // Search and display customer by phone number
 void searchCustomerByPhone(Customer customers[], int customerCount)
 {
-    char phoneNumber[PHONE_LENGTH];
-    char choiceInput[10];
-    int choice;
-    int ch;
+    char phoneNumber[INPUT_LENGTH];
+    int index;
+
+    printSectionTitle("SEARCH BY PHONE");
 
     while (1)
     {
         printf("Enter phone number: ");
-        scanf("%10s", phoneNumber);
-        while ((ch = getchar()) != '\n' && ch != EOF)
-            ;
+
+        if (!readLine(phoneNumber, sizeof(phoneNumber)))
+        {
+            printError("Input error. Exit search.");
+            return;
+        }
 
         if (!isValidPhoneNumber(phoneNumber))
         {
-            printf("Invalid phone number.\n");
+            printError("Invalid phone number.");
         }
         else
         {
-            int index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
+            index = findCustomerIndexByPhone(customers, customerCount, phoneNumber);
 
-            if (index == -1)
-            {
-                printf("Customer not found.\n");
-            }
-            else
+            if (index != -1)
             {
                 displayCustomer(customers[index]);
                 return;
             }
+
+            printError("Customer not found.");
         }
 
-        printf("\nOptions:\n");
-        printf("1. Try again\n");
-        printf("2. Exit search\n");
-        printf("Choose: ");
-
-        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        if (!askSearchOption())
         {
-            printf("Input error. Exit search.\n");
-            return;
-        }
-
-        if (sscanf(choiceInput, "%d", &choice) != 1)
-        {
-            printf("Invalid choice. Exit search.\n");
-            return;
-        }
-
-        if (choice == 1)
-        {
-            continue;
-        }
-        else if (choice == 2)
-        {
-            return;
-        }
-        else
-        {
-            printf("Invalid choice. Exit search.\n");
             return;
         }
     }
@@ -175,58 +418,42 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
 // Search and display customer by car plate
 void searchCustomerByPlate(Customer customers[], int customerCount)
 {
-    char carPlate[PLATE_LENGTH];
-    char choiceInput[10];
-    int choice;
-    int ch;
+    char carPlate[INPUT_LENGTH];
+    int index;
+
+    printSectionTitle("SEARCH BY CAR PLATE");
 
     while (1)
     {
         printf("Enter car plate: ");
-        scanf("%19s", carPlate);
-        while ((ch = getchar()) != '\n' && ch != EOF)
-            ;
 
-        int index = findCustomerIndexByPlate(customers, customerCount, carPlate);
-
-        if (index == -1)
+        if (!readLine(carPlate, sizeof(carPlate)))
         {
-            printf("Customer not found.\n");
+            printError("Input error. Exit search.");
+            return;
+        }
+
+        normalizeCarPlate(carPlate);
+
+        if (!isValidCarPlate(carPlate))
+        {
+            printError("Invalid car plate. Use format like 30A-123.45 or 29-AA 123.45.");
         }
         else
         {
-            displayCustomer(customers[index]);
-            return;
+            index = findCustomerIndexByPlate(customers, customerCount, carPlate);
+
+            if (index != -1)
+            {
+                displayCustomer(customers[index]);
+                return;
+            }
+
+            printError("Customer not found.");
         }
 
-        printf("\nOptions:\n");
-        printf("1. Try again\n");
-        printf("2. Exit search\n");
-        printf("Choose: ");
-
-        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        if (!askSearchOption())
         {
-            printf("Input error. Exit search.\n");
-            return;
-        }
-
-        if (sscanf(choiceInput, "%d", &choice) != 1)
-        {
-            printf("Invalid choice. Exit search.\n");
-            return;
-        }
-
-        if (choice == 1)
-        {
-            continue;
-        }
-        else if (choice == 2)
-        {
-            return;
-        }
-        else
-        {
-            printf("Invalid choice. Exit search.\n");
             return;
         }
     }
@@ -235,123 +462,22 @@ void searchCustomerByPlate(Customer customers[], int customerCount)
 // Add a new customer to the system
 void addCustomer(Customer customers[], int *customerCount)
 {
+    Customer newCustomer;
+
+    printSectionTitle("ADD CUSTOMER");
+
     // Check if the customer list is full before adding a new customer
     if (*customerCount >= MAX_CUSTOMERS)
     {
-        printf("Customer list is full. Cannot add more customers.\n");
+        printError("Customer list is full. Cannot add more customers.");
         return;
     }
 
-    Customer newCustomer;
-    int ch;
-
-    // Full name
-    while (1)
-    {
-        int i;
-
-        printf("Enter full name: ");
-        scanf(" %49[^\n]", newCustomer.fullName);
-
-        // Validate that the full name is not empty or contains only whitespace
-        for (i = 0; newCustomer.fullName[i] != '\0'; i++)
-        {
-            if (!isspace((unsigned char)(newCustomer.fullName[i])))
-            {
-                break;
-            }
-        }
-
-        if (newCustomer.fullName[i] == '\0')
-        {
-            printf("Full name cannot be empty. Please try again.\n");
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // Phone number
-    while (1)
-    {
-
-        printf("Enter phone number: ");
-        scanf("%10s", newCustomer.phoneNumber);
-        while ((ch = getchar()) != '\n' && ch != EOF)
-            ;
-
-        // Validate phone number format and check for duplicates
-        if (!isValidPhoneNumber(newCustomer.phoneNumber))
-        {
-            printf("Invalid phone number. Please try again.\n");
-        }
-        else if (isDuplicatePhoneNumber(customers, *customerCount, newCustomer.phoneNumber))
-        {
-            printf("Phone number already exists. Please enter another one.\n");
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // Car plate
-    while (1)
-    {
-        int i;
-
-        printf("Enter car plate: ");
-        scanf(" %19[^\n]", newCustomer.carPlate);
-
-        for (i = 0; newCustomer.carPlate[i] != '\0'; i++)
-        {
-            if (!isspace((unsigned char)newCustomer.carPlate[i]))
-            {
-                break;
-            }
-        }
-
-        if (newCustomer.carPlate[i] == '\0')
-        {
-            printf("Car plate cannot be empty. Please try again.\n");
-        }
-        else if (isDuplicateCarPlate(customers, *customerCount, newCustomer.carPlate))
-        {
-            printf("Car plate already exists. Please enter another one.\n");
-        }
-        else
-        {
-            break;
-        }
-    }
-
-    // Car type
-    while (1)
-    {
-        int i;
-
-        printf("Enter car type: ");
-        scanf(" %30[^\n]", newCustomer.carType);
-
-        // Validate that the car type is not empty or contains only whitespace
-        for (i = 0; newCustomer.carType[i] != '\0'; i++)
-        {
-            if (!isspace((unsigned char)(newCustomer.carType[i])))
-            {
-                break;
-            }
-        }
-
-        if (newCustomer.carType[i] == '\0')
-        {
-            printf("Car type cannot be empty. Please try again.\n");
-        }
-        else
-        {
-            break;
-        }
-    }
+    // Get customer information
+    inputFullName(newCustomer.fullName, "Enter full name: ", 0);
+    inputPhoneNumber(newCustomer.phoneNumber, customers, *customerCount);
+    inputCarPlate(newCustomer.carPlate, "Enter car plate: ", 0, customers, *customerCount, -1);
+    inputCarType(newCustomer.carType, "Enter car type: ", 0);
 
     // Generate a unique customer ID and initialize order count
     generateCustomerId(newCustomer.customerId, *customerCount);
@@ -360,79 +486,37 @@ void addCustomer(Customer customers[], int *customerCount)
     customers[*customerCount] = newCustomer;
     (*customerCount)++;
 
-    printf("Customer added successfully.\n");
+    printSuccess("Customer added successfully.");
+    displayCustomer(newCustomer);
 }
 
 // Update existing customer information
 void updateCustomer(Customer customers[], int *customerCount)
 {
-    char phoneNumber[PHONE_LENGTH];
-    char choiceInput[10];
-    int index = -1;
+    int index;
     int choice;
-    int ch;
+    int updated;
+
+    printSectionTitle("FIND CUSTOMER TO UPDATE");
 
     while (1)
     {
-        int attempts = 0;
-
-        // Allow the user up to 5 attempts to enter a valid phone number
-        while (attempts < 5)
-        {
-            printf("Enter phone number to update: ");
-            scanf("%10s", phoneNumber);
-            while ((ch = getchar()) != '\n' && ch != EOF)
-                ;
-
-            if (!isValidPhoneNumber(phoneNumber))
-            {
-                attempts++;
-                printf("Invalid phone number. Please try again.\n");
-
-                if (attempts < 5)
-                {
-                    printf("Remaining attempts: %d\n", 5 - attempts);
-                }
-
-                continue;
-            }
-
-            index = findCustomerIndexByPhone(customers, *customerCount, phoneNumber);
-
-            if (index != -1)
-            {
-                break;
-            }
-
-            attempts++;
-            printf("Customer not found.\n");
-
-            if (attempts < 5)
-            {
-                printf("Remaining attempts: %d\n", 5 - attempts);
-            }
-        }
+        index = findCustomerForUpdate(customers, *customerCount);
 
         if (index != -1)
         {
             break;
         }
 
-        printf("\nOptions:\n");
-        printf("1. Try again\n");
-        printf("2. Exit\n");
-        printf("3. Add new customer\n");
-        printf("Choose: ");
+        printSectionTitle("CUSTOMER NOT FOUND");
+        printMenuOption(1, "Try again");
+        printMenuOption(2, "Exit");
+        printMenuOption(3, "Add new customer");
+        printf("\nSelect option: ");
 
-        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        if (!readInt(&choice))
         {
-            printf("Input error. Try again.\n");
-            continue;
-        }
-
-        if (sscanf(choiceInput, "%d", &choice) != 1)
-        {
-            printf("Invalid choice. Try again.\n");
+            printError("Invalid choice. Try again.");
             continue;
         }
 
@@ -451,206 +535,63 @@ void updateCustomer(Customer customers[], int *customerCount)
         }
         else
         {
-            printf("Invalid choice. Try again.\n");
+            printError("Invalid choice. Try again.");
         }
     }
 
-    printf("Customer found. Proceeding to update...\n");
+    printSuccess("Customer found. Proceeding to update.");
     displayCustomer(customers[index]);
-    
- while (1)
+
+    while (1)
     {
-    printf("\n=================================\n");
-    printf("         UPDATE MENU\n");
-    printf("=================================\n");
-    printf("| %-2d | %-20s |\n", 1, "Full name");
-    printf("| %-2d | %-20s |\n", 2, "Car plate");
-    printf("| %-2d | %-20s |\n", 3, "Car type");
-    printf("| %-2d | %-20s |\n", 4, "Finish update");
-    printf("=================================\n");
-    printf("Choose: ");
- 
-        if (fgets(choiceInput, sizeof(choiceInput), stdin) == NULL)
+        displayUpdateMenu();
+
+        if (!readInt(&choice))
         {
-            printf("Input error. Try again.\n");
+            printError("Invalid choice. Try again.");
             continue;
         }
 
-        if (sscanf(choiceInput, "%d", &choice) != 1)
-        {
-            printf("Invalid choice. Try again.\n");
-            continue;
-        }
-
-        // Update full name
         if (choice == 1)
         {
-            char newFullName[NAME_LENGTH];
-            int i;
-
             printf("Current full name: %s\n", customers[index].fullName);
+            updated = inputFullName(customers[index].fullName, "Enter new full name (press Enter to keep current): ", 1);
 
-            while (1) // Loop until a valid full name is entered or the user chooses to keep the current name
+            if (updated)
             {
-                printf("Enter new full name (press Enter to keep current): ");
-
-           
-                if (fgets(newFullName, sizeof(newFullName), stdin) == NULL)
-                {
-                    printf("Input error. Try again.\n");
-                    continue;
-                }
-
-               
-                newFullName[strcspn(newFullName, "\n")] = '\0';
-
-            
-                if (strlen(newFullName) == 0)
-                {
-                    break;
-                }
-
- 
-                for (i = 0; newFullName[i] != '\0'; i++)
-                {
-                    if (!isspace((unsigned char)newFullName[i]))
-                    {
-                        break;
-                    }
-                }
-
-                if (newFullName[i] == '\0')
-                {
-                    printf("Full name cannot contain only spaces. Please try again.\n");
-                }
-                else
-                {
-                    strcpy(customers[index].fullName, newFullName);
-                    printf("Full name updated.\n");
-                    break;
-                }
+                printSuccess("Full name updated.");
             }
         }
-
-                // Update car plate
         else if (choice == 2)
         {
-            char newCarPlate[PLATE_LENGTH];
-            int i, j, duplicate;
-
             printf("Current car plate: %s\n", customers[index].carPlate);
+            updated = inputCarPlate(customers[index].carPlate, "Enter new car plate (press Enter to keep current): ", 1, customers, *customerCount, index);
 
-            while (1)
+            if (updated)
             {
-                printf("Enter new car plate (press Enter to keep current): ");
-
-                if (fgets(newCarPlate, sizeof(newCarPlate), stdin) == NULL)
-                {
-                    printf("Input error. Try again.\n");
-                    continue;
-                }
-
-                newCarPlate[strcspn(newCarPlate, "\n")] = '\0';
-
-                if (strlen(newCarPlate) == 0)
-                {
-                    break;
-                }
-
-                for (i = 0; newCarPlate[i] != '\0'; i++)
-                {
-                    if (!isspace((unsigned char)newCarPlate[i]))
-                    {
-                        break;
-                    }
-                }
-
-                if (newCarPlate[i] == '\0')
-                {
-                    printf("Car plate cannot contain only spaces. Please try again.\n");
-                    continue;
-                }
-
-                duplicate = 0;
-                for (j = 0; j < *customerCount; j++)
-                {
-                    if (j != index && strcmp(customers[j].carPlate, newCarPlate) == 0)
-                    {
-                        duplicate = 1;
-                        break;
-                    }
-                }
-
-                if (duplicate)
-                {
-                    printf("Car plate already exists. Please try again.\n");
-                }
-                else
-                {
-                    strcpy(customers[index].carPlate, newCarPlate);
-                    printf("Car plate updated.\n");
-                    break;
-                }
+                printSuccess("Car plate updated.");
             }
         }
-
-        // Update car type
         else if (choice == 3)
         {
-            char newCarType[TYPE_LENGTH];
-            int i;
-
             printf("Current car type: %s\n", customers[index].carType);
+            updated = inputCarType(customers[index].carType, "Enter new car type (press Enter to keep current): ", 1);
 
-            while (1) // Loop until a valid car type is entered or the user chooses to keep the current type
+            if (updated)
             {
-                printf("Enter new car type (press Enter to keep current): ");
-
-                if (fgets(newCarType, sizeof(newCarType), stdin) == NULL)
-                {
-                    printf("Input error. Try again.\n");
-                    continue;
-                }
-
-                newCarType[strcspn(newCarType, "\n")] = '\0';
-
-                if (strlen(newCarType) == 0)
-                {
-                    break;
-                }
-
-                for (i = 0; newCarType[i] != '\0'; i++)
-                {
-                    if (!isspace((unsigned char)newCarType[i]))
-                    {
-                        break;
-                    }
-                }
-
-                if (newCarType[i] == '\0')
-                {
-                    printf("Car type cannot contain only spaces. Please try again.\n");
-                }
-                else
-                {
-                    strcpy(customers[index].carType, newCarType);
-                    printf("Car type updated.\n");
-                    break;
-                }
+                printSuccess("Car type updated.");
             }
         }
-        // Finish update
         else if (choice == 4)
         {
             break;
         }
         else
         {
-            printf("Invalid choice. Try again.\n");
+            printError("Invalid choice. Try again.");
         }
     }
-    
-    printf("Customer updated successfully.\n");
+
+    printSuccess("Customer updated successfully.");
     displayCustomer(customers[index]);
-    printf("------------------------------\n");
 }

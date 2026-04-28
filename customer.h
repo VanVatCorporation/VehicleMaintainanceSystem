@@ -34,11 +34,14 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
 
 
 // Validation functions
+int isValidFullName(char fullName[]);
 int isValidPhoneNumber(char phoneNumber[]);
+int isValidCarPlate(char carPlate[]);
 int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[]);
 int isDuplicateCarPlate(Customer customers[], int customerCount, char carPlate[]);
 
 // Utility functions
 void generateCustomerId(char customerId[], int customerCount);
+void normalizeCarPlate(char carPlate[]);
 
 #endif

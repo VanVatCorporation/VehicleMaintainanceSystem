@@ -3,82 +3,164 @@
 #include <time.h>
 #include "repair.h"
 #include "customer.h"
+#include "utils.h"
+
+#define INPUT_LENGTH 100
 
 // create order Id
-void generateOrderId(char orderId[], int counter){
-    sprintf(orderId, "RO%06d", counter);
+void generateOrderId(char orderId[], int counter)
+{
+    snprintf(orderId, 10, "RO%06d", counter);
+}
+
+static int inputServiceCount(void)
+{
+    int itemCount;
+
+    while (1)
+    {
+        printf("Enter number of services: ");
+
+        if (!readInt(&itemCount))
+        {
+            printError("Invalid number. Please try again.");
+        }
+        else if (itemCount < 1 || itemCount > MAX_ITEMS)
+        {
+            printf("[ERROR] Number of services must be from 1 to %d.\n", MAX_ITEMS);
+        }
+        else
+        {
+            return itemCount;
+        }
+    }
+}
+
+static int inputPrice(void)
+{
+    int price;
+
+    while (1)
+    {
+        printf("Price: ");
+
+        if (!readInt(&price))
+        {
+            printError("Invalid price. Please try again.");
+        }
+        else if (price < 0)
+        {
+            printError("Price cannot be negative. Please try again.");
+        }
+        else
+        {
+            return price;
+        }
+    }
+}
+
+static void inputCustomerPhone(char phoneNumber[])
+{
+    char input[INPUT_LENGTH];
+
+    while (1)
+    {
+        printf("Enter phone number: ");
+
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (!isValidPhoneNumber(input))
+        {
+            printError("Invalid phone number. Please try again.");
+        }
+        else
+        {
+            strcpy(phoneNumber, input);
+            return;
+        }
+    }
 }
 
 // create order
-RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount){
+RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount)
+{
     RepairOrder order;
-    char inputPhone[11];
+    int index;
+    int i;
 
+    printSectionTitle("CREATE REPAIR ORDER");
     generateOrderId(order.orderId, counter);
+    printf("[INFO] New order ID: %s\n", order.orderId);
 
-    // enter number phone
-    printf("Enter phone number: ");
-    fgets(inputPhone, sizeof(inputPhone), stdin);
-    inputPhone[strcspn(inputPhone, "\n")] = 0;
+    // enter phone number
+    inputCustomerPhone(order.customerPhone);
 
-    strcpy(order.customerPhone, inputPhone);
+    // find customer by phone number
+    index = findCustomerIndexByPhone(customers, customerCount, order.customerPhone);
 
-    // find customer by phone number and car plate
-    int index = findCustomerIndexByPhone(customers, customerCount, inputPhone);
-
-    if(index == -1){
-        printf("Customer not found!\n");
-    } else {
-        printf("The customer has found:\n");
+    if (index == -1)
+    {
+        printError("Customer not found. The order will still be created with this phone number.");
+    }
+    else
+    {
+        printSuccess("Customer found.");
         displayCustomer(customers[index]);
-        printf("Enter car plate: %s\n", customers[index].carPlate);
     }
 
-    // Problems 
-    printf("Enter problems of car: ");
-    fgets(order.symptom, sizeof(order.symptom), stdin);
-    order.symptom[strcspn(order.symptom, "\n")] = 0;
-
-    // Enter service 
-    printf("Enter number of service: ");
-    scanf("%d", &order.itemCount);
-    getchar();
-
-    if(order.itemCount > MAX_ITEMS){
-        order.itemCount = MAX_ITEMS;
+    // problems
+    printf("Enter vehicle problem: ");
+    if (!readLine(order.symptom, sizeof(order.symptom)))
+    {
+        strcpy(order.symptom, "");
     }
 
-    for(int i = 0; i < order.itemCount; i++){
-        printf("\nService %d\n", i + 1);
+    // enter service
+    printSectionTitle("SERVICE DETAILS");
+    order.itemCount = inputServiceCount();
 
-        printf("Name of service: ");
-        fgets(order.items[i].name, sizeof(order.items[i].name), stdin);
-        order.items[i].name[strcspn(order.items[i].name, "\n")] = 0;
+    for (i = 0; i < order.itemCount; i++)
+    {
+        printf("\n[Service %d]\n", i + 1);
 
-        printf("Price: ");
-        scanf("%d", &order.items[i].price);
-        getchar();
+        printf("Service name: ");
+        if (!readLine(order.items[i].name, sizeof(order.items[i].name)))
+        {
+            strcpy(order.items[i].name, "");
+        }
+
+        order.items[i].price = inputPrice();
     }
 
     order.createdDate = time(NULL);
-
-    order.status = RECEIVED;// default status
+    order.status = RECEIVED; // default status
 
     return order;
 }
 
 // caculate money when print order
-int calculateTotal(RepairOrder order){
+int calculateTotal(RepairOrder order)
+{
     int total = 0;
-    for(int i = 0; i < order.itemCount; i++){
+    int i;
+
+    for (i = 0; i < order.itemCount; i++)
+    {
         total += order.items[i].price;
     }
+
     return total;
 }
 
 // update status
-const char* getStatusText(Status status){
-    switch(status){
+const char* getStatusText(Status status)
+{
+    switch (status)
+    {
         case RECEIVED: return "Received";
         case UNDER_REPAIRED: return "Under repaired";
         case COMPLETE: return "Complete";
@@ -87,41 +169,77 @@ const char* getStatusText(Status status){
 }
 
 // update status when creating a order
-RepairOrder updateStatus(RepairOrder order){
+RepairOrder updateStatus(RepairOrder order)
+{
     int choice;
 
-    printf("\nUpdate status:\n");
-    printf("1. Received\n");
-    printf("2. Under repaired\n");
-    printf("3. Complete\n");
-    printf("Choose: ");
-    scanf("%d", &choice);
+    while (1)
+    {
+        printSectionTitle("UPDATE ORDER STATUS");
+        printf("  Current status: %s\n\n", getStatusText(order.status));
+        printMenuOption(1, "Received");
+        printMenuOption(2, "Under repaired");
+        printMenuOption(3, "Complete");
+        printf("\nSelect option: ");
 
-    switch(choice){
-        case 1: order.status = RECEIVED; break;
-        case 2: order.status = UNDER_REPAIRED; break;
-        case 3: order.status = COMPLETE; break;
-        default: printf("Error!\n");
+        if (!readInt(&choice))
+        {
+            printError("Invalid choice. Please try again.");
+            continue;
+        }
+
+        switch (choice)
+        {
+            case 1: order.status = RECEIVED; return order;
+            case 2: order.status = UNDER_REPAIRED; return order;
+            case 3: order.status = COMPLETE; return order;
+            default: printError("Invalid choice. Please try again.");
+        }
     }
-
-    return order;
 }
 
-// in phiếu
-void printRepairOrder(RepairOrder order){
-    printf("\n=== ORDER INFORMATION ===\n");
-    printf("Order ID: %s\n", order.orderId);
-    printf("Phone: %s\n", order.customerPhone);
-    printf("Symptom: %s\n", order.symptom);
-    printf("Created: %s", ctime(&order.createdDate));
-    printf("Status: %s\n", getStatusText(order.status));
-    printf("\nList of service:\n");
-    for(int i = 0; i < order.itemCount; i++){
-        printf("%d. %s - %d VND\n",
+static void printOrderDivider(void)
+{
+    printf("+-----+----------------------------------------+--------------+\n");
+}
+
+static void printOrderSummaryRow(const char label[], const char value[])
+{
+    printf("  %-12s : %s\n", label, value);
+}
+
+// print repair order
+void printRepairOrder(RepairOrder order)
+{
+    int i;
+    char createdText[32];
+
+    if (strftime(createdText, sizeof(createdText), "%Y-%m-%d %H:%M", localtime(&order.createdDate)) == 0)
+    {
+        strcpy(createdText, "Unknown");
+    }
+
+    printBoxTitle("REPAIR ORDER DETAILS", 64);
+    printOrderSummaryRow("Order ID", order.orderId);
+    printOrderSummaryRow("Phone", order.customerPhone);
+    printOrderSummaryRow("Created", createdText);
+    printOrderSummaryRow("Status", getStatusText(order.status));
+    printOrderSummaryRow("Problem", order.symptom);
+
+    printf("\n");
+    printOrderDivider();
+    printf("| %-3s | %-38s | %-12s |\n", "No", "Service", "Price");
+    printOrderDivider();
+
+    for (i = 0; i < order.itemCount; i++)
+    {
+        printf("| %-3d | %-38.38s | %10d VND |\n",
             i + 1,
             order.items[i].name,
             order.items[i].price);
     }
 
-    printf("Total of money: %d VND\n", calculateTotal(order));
+    printOrderDivider();
+    printf("| %-3s | %-38s | %10d VND |\n", "", "Total", calculateTotal(order));
+    printOrderDivider();
 }
