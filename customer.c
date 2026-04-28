@@ -558,6 +558,7 @@ void updateCustomer(Customer customers[], int *customerCount)
                 }
 
                 for (i = 0; newCarPlate[i] != '\0'; i++)
+
                 {
                     if (!isspace((unsigned char)newCarPlate[i]))
                     {

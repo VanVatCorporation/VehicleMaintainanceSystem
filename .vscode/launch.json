@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run VehicleMaintenanceSystem",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "C:/Users/LENOVO/OneDrive/TAILIU~1/GitHub/VEHICL~1/motorbike_shop.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "C:/Users/LENOVO/OneDrive/TAILIU~1/GitHub/VEHICL~1",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "C:\\msys64\\ucrt64\\bin\\gdb.exe",
+            "preLaunchTask": "Build VehicleMaintenanceSystem"
+        }
+    ]
+}
