@@ -42,3 +42,4 @@ const char* getStatusText(Status status);
 RepairOrder updateStatus(RepairOrder order);
 
 #endif
+void searchOrder(RepairOrder orders[], int orderCount);

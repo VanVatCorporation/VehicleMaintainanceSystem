@@ -125,3 +125,34 @@ void printRepairOrder(RepairOrder order){
 
     printf("Total of money: %d VND\n", calculateTotal(order));
 }
+
+void searchOrder(RepairOrder orders[], int orderCount){
+    char searchTerm[50];
+    int found = 0;
+
+    printf("\n=== SEARCH REPAIR ORDER ===\n");
+    printf("Enter Order ID or Customer Phone to search: ");
+    scanf("%s", searchTerm);
+
+    // In tiêu đề bảng
+    printf("\n%-10s | %-15s | %-20s | %-15s\n", "ID", "Phone", "Symptom", "Status");
+    printf("------------------------------------------------------------\n");
+
+    for (int i = 0; i < orderCount; i++) {
+        // Tìm kiếm khớp một phần theo ID hoặc Số điện thoại
+        if (strstr(orders[i].orderId, searchTerm) || strstr(orders[i].customerPhone, searchTerm)) {
+            printf("%-10s | %-15s | %-20s | %-15s\n", 
+                   orders[i].orderId, 
+                   orders[i].customerPhone, 
+                   orders[i].symptom, 
+                   getStatusText(orders[i].status)); // Đã sửa: dùng hàm helper để lấy text
+            found++;
+        }
+    }
+
+    if (found == 0) {
+        printf("No orders found matching: %s\n", searchTerm);
+    } else {
+        printf("\nFound %d result(s).\n", found);
+    }
+}
