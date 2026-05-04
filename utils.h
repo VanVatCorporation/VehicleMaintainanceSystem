@@ -1,12 +1,14 @@
-
 #ifndef UTILS_H
 #define UTILS_H
-#define COLOR_TITLE   "\033[1;33m" // Vàng đậm cho tiêu đề
-#define COLOR_HEADER  "\033[1;36m" // Xanh dương sáng cho bảng
-#define COLOR_SUCCESS "\033[1;32m" // Xanh lá cho kết quả tìm thấy
-#define COLOR_ERROR   "\033[1;31m" // Đỏ cho thông báo không thấy
-#define COLOR_RESET   "\033[0m"    // Reset về màu mặc định
-// Các hàm tiện ích in màu
+
+
+#define ANSI_COLOR_RESET   "\x1b[0m"
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+
+// Khai báo prototype hàm (để file khác có thể gọi được)
 void printColor(const char* color, const char* text);
 
-#endif  
+#endif
