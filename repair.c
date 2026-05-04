@@ -3,6 +3,7 @@
 #include <time.h>
 #include "repair.h"
 #include "customer.h"
+#include "utils.h"
 
 // create order Id
 void generateOrderId(char orderId[], int counter){
@@ -129,29 +130,25 @@ void printRepairOrder(RepairOrder order){
 void searchOrder(RepairOrder orders[], int orderCount){
     char searchTerm[50];
     int found = 0;
-
-    printf("\n=== SEARCH REPAIR ORDER ===\n");
+    printf(COLOR_TITLE "\n=== SEARCH REPAIR ORDER ===\n" COLOR_RESET);
     printf("Enter Order ID or Customer Phone to search: ");
-    scanf("%s", searchTerm);
-
-    // In tiêu đề bảng
-    printf("\n%-10s | %-15s | %-20s | %-15s\n", "ID", "Phone", "Symptom", "Status");
+    scanf("%s", searchTerm);    
+    printf(COLOR_HEADER "\n%-10s | %-15s | %-20s | %-15s\n" COLOR_RESET, "ID", "Phone", "Symptom", "Status");
     printf("------------------------------------------------------------\n");
 
     for (int i = 0; i < orderCount; i++) {
-        // Tìm kiếm khớp một phần theo ID hoặc Số điện thoại
         if (strstr(orders[i].orderId, searchTerm) || strstr(orders[i].customerPhone, searchTerm)) {
-            printf("%-10s | %-15s | %-20s | %-15s\n", 
+            printf(COLOR_SUCCESS "%-10s | %-15s | %-20s | %-15s\n" COLOR_RESET, 
                    orders[i].orderId, 
                    orders[i].customerPhone, 
                    orders[i].symptom, 
-                   getStatusText(orders[i].status)); // Đã sửa: dùng hàm helper để lấy text
+                   getStatusText(orders[i].status)); 
             found++;
         }
     }
 
     if (found == 0) {
-        printf("No orders found matching: %s\n", searchTerm);
+        printf(COLOR_ERROR "No orders found matching: %s\n" COLOR_RESET, searchTerm);
     } else {
         printf("\nFound %d result(s).\n", found);
     }
