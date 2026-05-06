@@ -9,10 +9,16 @@ void generateOrderId(char orderId[], int counter){
     sprintf(orderId, "RO%06d", counter);
 }
 
+// create service Id
+void generateServiceId(char id[], int counter){
+    sprintf(id, "SV%06d", counter);
+}
+
 // create order
-RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount){
+RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount, Service services[], int serviceCount){
     RepairOrder order;
     char inputPhone[11];
+    char id[10];
 
     generateOrderId(order.orderId, counter);
 
@@ -36,12 +42,12 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
     }
 
     // Problems 
-    printf("Enter problems of car: ");
+    printf("Enter problems of car:\n");
     fgets(order.symptom, sizeof(order.symptom), stdin);
     order.symptom[strcspn(order.symptom, "\n")] = 0;
 
     // Enter service 
-    printf("Enter number of service: ");
+    printf("Enter number of services: ");
     scanf("%d", &order.itemCount);
     getchar();
 
@@ -49,16 +55,31 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
         order.itemCount = MAX_ITEMS;
     }
 
+    printf("\n=== SERVICE LIST ===\n");
+    for(int i = 0; i < serviceCount; i++){
+        printf("%s | %s | %d VND\n",
+            services[i].serviceId,
+            services[i].name,
+            services[i].price);
+    }
+
     for(int i = 0; i < order.itemCount; i++){
         printf("\nService %d\n", i + 1);
 
-        printf("Name of service: ");
-        fgets(order.items[i].name, sizeof(order.items[i].name), stdin);
-        order.items[i].name[strcspn(order.items[i].name, "\n")] = 0;
-
-        printf("Price: ");
-        scanf("%d", &order.items[i].price);
+        printf("Enter service ID: ");
+        scanf("%s", id);
         getchar();
+
+        int idx = findServiceIndexById(services, serviceCount, id);
+
+        if(idx == -1){
+            printf("Service not found! Try again.\n");
+            i--; // nhập lại
+            continue;
+        }
+
+        strcpy(order.items[i].name, services[idx].name);
+        order.items[i].price = services[idx].price;
     }
 
     order.createdDate = time(NULL);
@@ -66,6 +87,32 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
     order.status = RECEIVED;// default status
 
     return order;
+}
+
+// add service to the list 
+void addService(Service services[], int *serviceCount){
+    if(*serviceCount >= MAX_SERVICES){
+        printf("Service list is full!\n");
+        return;
+    }
+
+    Service s;
+
+    generateServiceId(s.serviceId, *serviceCount);
+    printf("Service ID: %s\n", s.serviceId);
+
+    printf("Enter service name: ");
+    getchar();
+    fgets(s.name, sizeof(s.name), stdin);
+    s.name[strcspn(s.name, "\n")] = 0;
+
+    printf("Enter price: ");
+    scanf("%d", &s.price);
+
+    services[*serviceCount] = s;
+    (*serviceCount)++;
+
+    printf("Add service successfully!\n");
 }
 
 // caculate money when print order
@@ -87,6 +134,16 @@ const char* getStatusText(Status status){
     }
 }
 
+// find service id
+int findServiceIndexById(Service services[], int count, char id[]){
+    for(int i = 0; i < count; i++){
+        if(strcmp(services[i].serviceId, id) == 0){
+            return i;
+        }
+    }
+    return -1;
+}
+
 // update status when creating a order
 RepairOrder updateStatus(RepairOrder order){
     int choice;
@@ -100,15 +157,20 @@ RepairOrder updateStatus(RepairOrder order){
     scanf("%d", &choice);
 
     switch(choice){
-        case 1: order.status = RECEIVED; break;
-        case 2: order.status = UNDER_REPAIRED; break;
-        case 3: order.status = COMPLETE; break;
-        default: printf("Error!\n");
+        case 1: newStatus = RECEIVED; break;
+        case 2: newStatus = UNDER_REPAIRED; break;
+        case 3: newStatus = COMPLETE; break;
+        default: 
+            printf("Error!\n");
+            return order;
     }
 
-    // check status 
+    // check status
+    // TODO: lỗi vẫn đảo ngược được
     if(newStatus < order.status){
-        printf("cannot go back original status!\n");
+        printf("Cannot go back original status!\n");
+    }else if(newStatus == order.status){
+        printf("Status is the same!\n");
     } else {
         order.status = newStatus;
         printf("Update complete!\n");
@@ -116,39 +178,60 @@ RepairOrder updateStatus(RepairOrder order){
     return order;
 }
 
-//View information of order
-void viewRepairOrderDetail(RepairOrder order, Customer customers[], int customerCount){
-    printf("\n===== INFORMATION =====\n");
+// update service in list
+void updateService(Service services[], int serviceCount){
+    char id[10];
+    int index;
 
-    int index = findCustomerIndexByPhone(customers, customerCount, order.customerPhone);
+    printf("Enter service ID to update: ");
+    scanf("%9s", id);
 
-    if(index != -1){
-        Customer c = customers[index];
+    index = findServiceIndexById(services, serviceCount, id);
 
-        printf("\n--- INFORMATION OF CUSTOMER ---\n");
-        printf("NAME: %s\n", c.fullName);
-        printf("PHONE NUMBER: %s\n", c.phoneNumber);
-        printf("PLATE: %s\n", c.carPlate);
-        printf("CAR TYPE: %s\n", c.carType);
-    } else {
-        printf("UNKNOWN!\n");
+    if(index == -1){
+        printf("Service not found!\n");
+        return;
     }
 
-    printf("\n--- INFORMATION OF  ORDER ---\n");
-    printf("Order ID: %s\n", order.orderId);
-    printf("Situation: %s\n", order.symptom);
-    printf("Status: %s\n", getStatusText(order.status));
-    printf("Created: %s", ctime(&order.createdDate));
+    printf("\n--- OLD INFORMATION ---\n");
+    printf("Name: %s\n", services[index].name);
+    printf("Price: %d\n", services[index].price);
 
-    printf("\n--- SERVICE ---\n");
-    for(int i = 0; i < order.itemCount; i++){
-        printf("%d. %s - %d VND\n",
-            i + 1,
-            order.items[i].name,
-            order.items[i].price);
+    printf("\n--- UPDATE ---\n");
+
+    printf("Enter new name: ");
+    getchar(); // clear buffer
+    fgets(services[index].name, sizeof(services[index].name), stdin);
+    services[index].name[strcspn(services[index].name, "\n")] = 0;
+
+    printf("Enter new price: ");
+    scanf("%d", &services[index].price);
+
+    printf("Update service successfully!\n");
+}
+
+// view history of order
+void viewRepairOrderDetail(RepairOrder orders[], int orderCount, Customer customers[], int customerCount){
+    char phone[11];
+
+    printf("Enter phone number: ");
+    scanf("%10s", phone);
+
+    int found = 0;
+
+    for(int i = 0; i < orderCount; i++){
+        if(strcmp(orders[i].customerPhone, phone) == 0){
+
+            printf("\n===== ORDER %d =====\n", i + 1);
+            printRepairOrder(orders[i], customers, customerCount);
+
+            found = 1;
+        }
     }
 
-    printf("\nTotal: %d VND\n", calculateTotal(order));
+    if(!found){
+        printf("No history found for this phone number!\n");
+    }
 }
 
 // TODO: thêm paging cho filter khi lọc
@@ -226,7 +309,7 @@ void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount){
 }
 
 // TODO: thêm paging cho list
-// list of order
+// list ALL order
 void listRepairOrders(RepairOrder orders[], int orderCount){
     int page = 0;
     int totalPages = (orderCount + 9) / 10;
@@ -262,15 +345,32 @@ void listRepairOrders(RepairOrder orders[], int orderCount){
     } while(choice != 'q');
 }
 
-// Print order
-void printRepairOrder(RepairOrder order){
+// view details order
+void printRepairOrder(RepairOrder order, Customer customers[], int customerCount){
     printf("\n=== ORDER INFORMATION ===\n");
+
+    int index = findCustomerIndexByPhone(customers, customerCount, order.customerPhone);
+
+    if(index != -1){
+        Customer c = customers[index];
+
+        printf("\n--- CUSTOMER INFORMATION ---\n");
+        printf("Name: %s\n", c.fullName);
+        printf("Phone: %s\n", c.phoneNumber);
+        printf("Plate: %s\n", c.carPlate);
+        printf("Car type: %s\n", c.carType);
+    } else {
+        printf("\n--- CUSTOMER INFORMATION ---\n");
+        printf("UNKNOWN!\n");
+    }
+
+    printf("\n--- ORDER INFORMATION ---\n");
     printf("Order ID: %s\n", order.orderId);
-    printf("Phone: %s\n", order.customerPhone);
     printf("Symptom: %s\n", order.symptom);
-    printf("Created: %s\n", ctime(&order.createdDate));
     printf("Status: %s\n", getStatusText(order.status));
-    printf("\nList of service:\n");
+    printf("Created: %s", ctime(&order.createdDate));
+
+    printf("\n--- SERVICES ---\n");
     for(int i = 0; i < order.itemCount; i++){
         printf("%d. %s - %d VND\n",
             i + 1,
@@ -278,5 +378,5 @@ void printRepairOrder(RepairOrder order){
             order.items[i].price);
     }
 
-    printf("Total of money: %d VND\n", calculateTotal(order));
+    printf("\nTotal: %d VND\n", calculateTotal(order));
 }
