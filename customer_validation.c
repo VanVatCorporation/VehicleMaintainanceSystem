@@ -3,10 +3,26 @@
 #include <ctype.h>
 #include "customer.h"
 
-static int isBlank(char value[])
+    static int isBlank(char value[])
 {
-    return value[0] == '\0';
+    int i;
+
+    if (value[0] == '\0')
+    {
+        return 1;
+    }
+
+    for (i = 0; value[i] != '\0'; i++)
+    {
+        if (!isspace((unsigned char)value[i]))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
 }
+
 
 static int isAllowedSeriesLetter(char value)
 {
