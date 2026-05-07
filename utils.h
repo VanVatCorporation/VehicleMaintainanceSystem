@@ -10,5 +10,14 @@
 
 // Khai báo prototype hàm (để file khác có thể gọi được)
 void printColor(const char* color, const char* text);
+void printInfo(const char* message);
+void printSuccess(const char* message);
+void printError(const char* message);
+void printSectionTitle(const char* title);
+void printBoxTitle(const char* title, int width);
+void printMenuOption(int option, const char* label);
+void printMenuBack(void);
+int readLine(char buffer[], int size);
+int readInt(int* value);
 
 #endif
