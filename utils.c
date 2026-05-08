@@ -159,3 +159,7 @@ int readInt(int *value)
 
     return sscanf(input, "%d %c", value, &extra) == 1;
 }
+
+void printColor(const char* color, const char* text) {
+    printf("%s%s%s", color, text, ANSI_COLOR_RESET);
+}
