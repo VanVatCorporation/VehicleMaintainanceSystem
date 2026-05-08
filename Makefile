@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -g
-SRCS = main.c customer.c repair.c fileio.c utils.c report.c
+SRCS = main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c
 OBJS = $(SRCS:.c=.o)
 TARGET = motorbike_shop
 
