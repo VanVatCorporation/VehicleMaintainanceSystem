@@ -85,6 +85,11 @@ static void inputCustomerPhone(char phoneNumber[])
     }
 }
 
+// create service Id
+void generateServiceId(char id[], int counter){
+    sprintf(id, "SV%06d", counter);
+}
+
 // create order
 RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount)
 {
@@ -142,6 +147,32 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
     return order;
 }
 
+// add service to the list 
+void addService(Service services[], int *serviceCount){
+    if(*serviceCount >= MAX_SERVICES){
+        printf("Service list is full!\n");
+        return;
+    }
+
+    Service s;
+
+    generateServiceId(s.serviceId, *serviceCount);
+    printf("Service ID: %s\n", s.serviceId);
+
+    printf("Enter service name: ");
+    getchar();
+    fgets(s.name, sizeof(s.name), stdin);
+    s.name[strcspn(s.name, "\n")] = 0;
+
+    printf("Enter price: ");
+    scanf("%d", &s.price);
+
+    services[*serviceCount] = s;
+    (*serviceCount)++;
+
+    printf("Add service successfully!\n");
+}
+
 // caculate money when print order
 int calculateTotal(RepairOrder order)
 {
@@ -162,16 +193,27 @@ const char* getStatusText(Status status)
     switch (status)
     {
         case RECEIVED: return "Received";
-        case UNDER_REPAIRED: return "Under repaired";
-        case COMPLETE: return "Complete";
+        case UNDER_REPAIRED: return "Under repair";
+        case COMPLETE: return "Completed";
         default: return "Unknown";
     }
+}
+
+// find service id
+int findServiceIndexById(Service services[], int count, char id[]){
+    for(int i = 0; i < count; i++){
+        if(strcmp(services[i].serviceId, id) == 0){
+            return i;
+        }
+    }
+    return -1;
 }
 
 // update status when creating a order
 RepairOrder updateStatus(RepairOrder order)
 {
     int choice;
+    Status newStatus;
 
     while (1)
     {
