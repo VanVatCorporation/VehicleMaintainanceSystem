@@ -3,6 +3,7 @@
 #include <time.h>
 #include "repair.h"
 #include "customer.h"
+#include "utils.h"
 
 // create order Id
 void generateOrderId(char orderId[], int counter){
@@ -379,4 +380,34 @@ void printRepairOrder(RepairOrder order, Customer customers[], int customerCount
     }
 
     printf("\nTotal: %d VND\n", calculateTotal(order));
+}
+
+void searchOrder(RepairOrder orders[], int orderCount){
+    char searchTerm[50];
+    int found = 0;
+
+    printf(ANSI_COLOR_YELLOW "\n=== SEARCH REPAIR ORDER ===\n" ANSI_COLOR_RESET);
+    printf("Enter Order ID or Customer Phone: ");
+    scanf("%s", searchTerm);
+    while(getchar() != '\n');
+
+    printf(ANSI_COLOR_CYAN "\n%-10s | %-15s | %-20s | %-15s\n" ANSI_COLOR_RESET, "ID", "Phone", "Symptom", "Status");
+    printf("------------------------------------------------------------\n");
+
+    for (int i = 0; i < orderCount; i++) {
+        if (strstr(orders[i].orderId, searchTerm) || strstr(orders[i].customerPhone, searchTerm)) {
+            printf(ANSI_COLOR_GREEN "%-10s | %-15s | %-20s | %-15s\n" ANSI_COLOR_RESET, 
+                   orders[i].orderId, 
+                   orders[i].customerPhone, 
+                   orders[i].symptom, 
+                   getStatusText(orders[i].status)); 
+            found++;
+        }
+    }
+
+    if (found == 0) {
+        printf(ANSI_COLOR_RED "No orders found matching: %s\n" ANSI_COLOR_RESET, searchTerm);
+    } else {
+        printf("\nFound %d result(s).\n", found);
+    }
 }

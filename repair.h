@@ -62,3 +62,5 @@ void listRepairOrders(RepairOrder orders[], int orderCount);
 void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount);
 
 #endif
+
+void searchOrder(RepairOrder orders[], int orderCount);
