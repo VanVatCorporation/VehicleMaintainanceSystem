@@ -2,20 +2,22 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "shell",
-            "label": "Build VehicleMaintenanceSystem",
+            "type": "cppbuild",
+            "label": "C/C++: gcc.exe build project",
             "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
             "args": [
+                "-fdiagnostics-color=always",
                 "-Wall",
                 "-g",
                 "main.c",
                 "customer.c",
+                "customer_validation.c",
                 "repair.c",
                 "fileio.c",
                 "utils.c",
                 "report.c",
                 "-o",
-                "motorbike_shop.exe"
+                "${workspaceFolder}\\motorbike_shop.exe"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -27,19 +29,24 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "detail": "Build all C source files in this project."
+            "detail": "Build the full project with gcc."
         },
         {
+            "label": "Run Motorbike Shop",
             "type": "shell",
-            "label": "Run VehicleMaintenanceSystem",
-            "command": ".\\motorbike_shop.exe",
+            "command": "${workspaceFolder}\\motorbike_shop.exe",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "dependsOn": "Build VehicleMaintenanceSystem",
+            "dependsOn": "C/C++: gcc.exe build project",
+            "dependsOrder": "sequence",
             "problemMatcher": [],
-            "group": "test",
-            "detail": "Run the compiled program in the terminal."
+            "presentation": {
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            }
         }
-    ]
+    ],
+    "version": "2.0.0"
 }
