@@ -4,7 +4,8 @@
 #include <time.h>
 #include "customer.h"
 
-#define MAX_ITEMS 20
+#define MAX_ITEMS 10
+#define MAX_SERVICES 100
 
 // repair status
 typedef enum {
@@ -13,11 +14,18 @@ typedef enum {
     COMPLETE
 } Status;
 
-// service
+// service stored inside a repair order
 typedef struct {
     char name[50];
     int price;
 } RepairItem;
+
+// service
+typedef struct {
+    char serviceId[10];
+    char name[50];
+    int price;
+} Service;
 
 // repair order
 typedef struct {
@@ -31,14 +39,32 @@ typedef struct {
     int itemCount;
 } RepairOrder;
 
-// prototype
+//=====prototype=====
+
+// ID generators
 void generateOrderId(char orderId[], int counter);
-RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount);
+void generateServiceId(char serviceId[], int counter);
+
+// repair order
+RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount, Service services[], int serviceCount);
 void printRepairOrder(RepairOrder order);
 int calculateTotal(RepairOrder order);
+
+// service management
+int findServiceIndexById(Service services[], int count, char serviceId[]);
+void addService(Service services[], int *serviceCount);
+
+// repair order management
+void viewRepairOrderHistory(RepairOrder orders[],int orderCount, Customer customers[], int customerCount);
+void listRepairOrders(RepairOrder orders[], int orderCount);
+void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount);
 
 // status
 const char* getStatusText(Status status);
 RepairOrder updateStatus(RepairOrder order);
+
+// output
+void printOrderDivider(void);
+void printOrderSummaryRow(const char label[], const char value[]);
 
 #endif

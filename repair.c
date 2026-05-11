@@ -10,8 +10,31 @@
 // create order Id
 void generateOrderId(char orderId[], int counter)
 {
-    snprintf(orderId, 10, "RO%06d", counter);
+    snprintf(orderId, 10, "RO%06d", counter + 1);
 }
+
+// create service Id 
+void generateServiceId(char serviceId[], int counter)
+{
+    snprintf(serviceId, 10, "SV%06d", counter + 1);
+}
+
+// find service by Id
+int findServiceIndexById(Service services[], int count, char serviceId[])
+{
+    int i;
+
+    for (i = 0; i < count; i++)
+    {
+        if (strcmp(services[i].serviceId, serviceId) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 
 static int inputServiceCount(void)
 {
@@ -35,6 +58,7 @@ static int inputServiceCount(void)
         }
     }
 }
+
 
 static int inputPrice(void)
 {
@@ -85,8 +109,71 @@ static void inputCustomerPhone(char phoneNumber[])
     }
 }
 
+static RepairOrder inputOrderServices(RepairOrder order, Service services[], int serviceCount)
+{
+    int i;
+    char serviceId[10];
+    int index;
+
+    printSectionTitle("SERVICE DETAILS");
+    order.itemCount = inputServiceCount();
+
+    if (serviceCount <= 0)
+    {
+        printError("No services available.");
+        order.itemCount = 0;
+        return order;
+    }
+
+    printBoxTitle("AVAILABLE SERVICES", 64);
+    printOrderDivider();
+    printf("| %-10s | %-25s | %-12s |\n",
+           "Service ID",
+           "Service Name",
+           "Price");
+    printOrderDivider();
+
+    for (i = 0; i < serviceCount; i++)
+    {
+        printf("| %-10s | %-25.25s | %10d VND |\n",
+               services[i].serviceId,
+               services[i].name,
+               services[i].price);
+    }
+
+    printOrderDivider();
+
+    for (i = 0; i < order.itemCount; i++)
+    {
+        while (1)
+        {
+            printf("\nEnter Service ID for item %d: ", i + 1);
+
+            if (!readLine(serviceId, sizeof(serviceId)))
+            {
+                printError("Input error.");
+                continue;
+            }
+
+            index = findServiceIndexById(services, serviceCount, serviceId);
+
+            if (index == -1)
+            {
+                printError("Service not found. Please try again.");
+            }
+            else
+            {
+                strcpy(order.items[i].name, services[index].name);
+                order.items[i].price = services[index].price;
+                break;
+            }
+        }
+    }
+    return order;
+}
+
 // create order
-RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount)
+RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount, Service services[], int serviceCount)
 {
     RepairOrder order;
     int index;
@@ -119,22 +206,8 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
         strcpy(order.symptom, "");
     }
 
-    // enter service
-    printSectionTitle("SERVICE DETAILS");
-    order.itemCount = inputServiceCount();
-
-    for (i = 0; i < order.itemCount; i++)
-    {
-        printf("\n[Service %d]\n", i + 1);
-
-        printf("Service name: ");
-        if (!readLine(order.items[i].name, sizeof(order.items[i].name)))
-        {
-            strcpy(order.items[i].name, "");
-        }
-
-        order.items[i].price = inputPrice();
-    }
+    // service
+    order = inputOrderServices(order, services, serviceCount);
 
     order.createdDate = time(NULL);
     order.status = RECEIVED; // default status
@@ -198,12 +271,263 @@ RepairOrder updateStatus(RepairOrder order)
     }
 }
 
-static void printOrderDivider(void)
+// add service to the list
+void addService(Service services[], int *serviceCount)
+{
+    Service service;
+
+    if (*serviceCount >= MAX_SERVICES)
+    {
+        printError("Service list is full.");
+        return;
+    }
+
+    generateServiceId(service.serviceId, *serviceCount);
+    printf("[INFO] New service ID: %s\n", service.serviceId);
+
+    printf("Enter service name: ");
+    if (!readLine(service.name, sizeof(service.name)))
+    {
+        strcpy(service.name, "");
+    }
+
+    service.price = inputPrice();
+
+    services[*serviceCount] = service;
+    (*serviceCount)++;
+
+    printSuccess("Service added successfully.");
+}
+
+// update service in the list
+void updateService(Service services[], int serviceCount)
+{
+    char id[10];
+    int index;
+    char priceText[20];
+    
+    printSectionTitle("UPDATE SERVICE");
+    printf("Enter service ID to update: ");
+    if (!readLine(id, sizeof(id)))
+    {
+        printError("Input error.");
+        return;
+    }
+
+    index = findServiceIndexById(services, serviceCount, id);
+
+    if (index == -1)
+    {
+        printError("Service not found.");
+        return;
+    }
+
+    printOrderSummaryRow("Service ID", services[index].serviceId);
+    printOrderSummaryRow("Name", services[index].name);
+    snprintf(priceText,sizeof(priceText), "%d VND", services[index].price);
+    printOrderSummaryRow("Price", priceText);
+
+    printf("Enter new service name: ");
+    if (!readLine(services[index].name, sizeof(services[index].name)))
+    {
+        strcpy(services[index].name, "");
+    }
+
+    services[index].price = inputPrice();
+
+    printSuccess("Service updated successfully.");
+}
+
+// view history of order
+void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer customers[], int customerCount)
+{
+    char phone[11];
+    int i;
+    int found = 0;
+
+    printSectionTitle("REPAIR ORDER HISTORY");
+    
+    printf("Enter phone number: ");
+    if (!readLine(phone, sizeof(phone)))
+    {
+        printError("Input error.");
+        return;
+    }
+
+    for (i = 0; i < orderCount; i++)
+    {
+        if (strcmp(orders[i].customerPhone, phone) == 0)
+        {
+            printf("\n===== ORDER %d =====\n", i + 1);
+            printRepairOrder(orders[i]);
+            found = 1;
+        }
+    }
+
+    if (!found)
+    {
+        printError("No history found for this phone number.");
+    }
+}
+
+// filter order by status
+void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount)
+{
+    int choice;
+    int i;
+    int totalItems = 0;
+    int totalPages;
+    int page = 0;
+    char cmd;
+    Status filterStatus;
+
+    printSectionTitle("FILTER BY STATUS");
+    printMenuOption(1, "Received");
+    printMenuOption(2, "Under repaired");
+    printMenuOption(3, "Complete");
+    printf("\nChoice: ");
+
+    if (!readInt(&choice))
+    {
+        printError("Invalid choice.");
+        return;
+    }
+
+    switch (choice)
+    {
+        case 1: filterStatus = RECEIVED; break;
+        case 2: filterStatus = UNDER_REPAIRED; break;
+        case 3: filterStatus = COMPLETE; break;
+        default:
+            printError("Unknown status.");
+            return;
+    }
+
+    for (i = 0; i < orderCount; i++)
+    {
+        if (orders[i].status == filterStatus)
+        {
+            totalItems++;
+        }
+    }
+
+    if (totalItems == 0)
+    {
+        printError("No data.");
+        return;
+    }
+
+    totalPages = (totalItems + 9) / 10;
+
+    do
+    {
+        int count = 0;
+        int shown = 0;
+
+        printf("\n===== FILTER RESULTS (Page %d/%d) =====\n",
+               page + 1,
+               totalPages);
+
+        for (i = 0; i < orderCount; i++)
+        {
+            if (orders[i].status == filterStatus)
+            {
+                if (count >= page * 10 && shown < 10)
+                {
+                    printf(" %-2d. %-10s | %-10s\n",
+                           i + 1,
+                           orders[i].orderId,
+                           orders[i].customerPhone);
+                    shown++;
+                }
+
+                count++;
+            }
+        }
+
+        printf("\n[n] Next | [p] Prev | [q] Quit: ");
+
+        if (!readLine(&cmd, 2))
+        {
+            break;
+        }
+
+        if (cmd == 'n' && page < totalPages - 1)
+        {
+            page++;
+        }
+        else if (cmd == 'p' && page > 0)
+        {
+            page--;
+        }
+
+    } while (cmd != 'q');
+}
+
+// list all orders
+void listRepairOrders(RepairOrder orders[], int orderCount)
+{
+    int page = 0;
+    int totalPages;
+    char cmd;
+    int i;
+
+    if (orderCount == 0)
+    {
+        printError("No orders available.");
+        return;
+    }
+
+    totalPages = (orderCount + 9) / 10;
+
+    do
+    {
+        int start = page * 10;
+        int end = start + 10;
+
+        if (end > orderCount)
+        {
+            end = orderCount;
+        }
+
+        printf("\n===== LIST OF ORDERS (Page %d/%d) =====\n",
+               page + 1,
+               totalPages);
+
+        for (i = start; i < end; i++)
+        {
+            printf("%d. %s | %s | %s\n",
+                   i + 1,
+                   orders[i].orderId,
+                   orders[i].customerPhone,
+                   getStatusText(orders[i].status));
+        }
+
+        printf("\n[n] Next | [p] Prev | [q] Quit: ");
+
+        if (!readLine(&cmd, 2))
+        {
+            break;
+        }
+
+        if (cmd == 'n' && page < totalPages - 1)
+        {
+            page++;
+        }
+        else if (cmd == 'p' && page > 0)
+        {
+            page--;
+        }
+
+    } while (cmd != 'q');
+}
+
+ void printOrderDivider(void)
 {
     printf("+-----+----------------------------------------+--------------+\n");
 }
 
-static void printOrderSummaryRow(const char label[], const char value[])
+ void printOrderSummaryRow(const char label[], const char value[])
 {
     printf("  %-12s : %s\n", label, value);
 }
