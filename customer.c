@@ -6,6 +6,8 @@
 
 #define INPUT_LENGTH 100
 #define MAX_UPDATE_ATTEMPTS 5
+#define CUSTOMER_FIELD_WIDTH 16
+#define CUSTOMER_VALUE_WIDTH 47
 
 static int isBlank(char value[])
 {
@@ -281,12 +283,19 @@ static void printCustomerDivider(void)
 
 static void printCustomerTextRow(const char field[], const char value[])
 {
-    printf("| %-16s | %-47.47s |\n", field, value);
+    printf("| ");
+    printPaddedText(field, CUSTOMER_FIELD_WIDTH, 0);
+    printf(" | ");
+    printPaddedText(value, CUSTOMER_VALUE_WIDTH, 0);
+    printf(" |\n");
 }
 
 static void printCustomerIntRow(const char field[], int value)
 {
-    printf("| %-16s | %-47d |\n", field, value);
+    char valueText[16];
+
+    snprintf(valueText, sizeof(valueText), "%d", value);
+    printCustomerTextRow(field, valueText);
 }
 
 // Display customer information

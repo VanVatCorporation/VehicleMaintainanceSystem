@@ -10,7 +10,7 @@ typedef struct ServiceCount {
     int count;
 } ServiceCount;
 
-int calculateDailyRevenue(time_t date, RepairOrder orders[], int orderCount);
+long long calculateDailyRevenue(time_t date, RepairOrder orders[], int orderCount);
 void getPopularServices(RepairOrder orders[], int orderCount);
 
 void listAllCustomers(Customer customers[], int customerCount);

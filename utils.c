@@ -6,14 +6,97 @@
 #define INPUT_LENGTH 100
 #define DEFAULT_UI_WIDTH 64
 
-static void printRepeated(char value, int count)
+static void fprintRepeated(FILE *stream, char value, int count)
 {
     int i;
 
     for (i = 0; i < count; i++)
     {
-        putchar(value);
+        fputc(value, stream);
     }
+}
+
+static void printRepeated(char value, int count)
+{
+    fprintRepeated(stdout, value, count);
+}
+
+static int isUtf8Continuation(unsigned char value)
+{
+    return (value & 0xC0) == 0x80;
+}
+
+static int getUtf8CharSize(const char value[], size_t remaining)
+{
+    unsigned char first = (unsigned char)value[0];
+
+    if (remaining == 0 || first == '\0')
+    {
+        return 0;
+    }
+
+    if (first < 0x80)
+    {
+        return 1;
+    }
+
+    if (remaining >= 2 &&
+        (first & 0xE0) == 0xC0 &&
+        isUtf8Continuation((unsigned char)value[1]))
+    {
+        return 2;
+    }
+
+    if (remaining >= 3 &&
+        (first & 0xF0) == 0xE0 &&
+        isUtf8Continuation((unsigned char)value[1]) &&
+        isUtf8Continuation((unsigned char)value[2]))
+    {
+        return 3;
+    }
+
+    if (remaining >= 4 &&
+        (first & 0xF8) == 0xF0 &&
+        isUtf8Continuation((unsigned char)value[1]) &&
+        isUtf8Continuation((unsigned char)value[2]) &&
+        isUtf8Continuation((unsigned char)value[3]))
+    {
+        return 4;
+    }
+
+    return 1;
+}
+
+static int getUtf8Slice(const char value[], int maxWidth, int *visibleWidth)
+{
+    int bytes = 0;
+    int totalBytes;
+    int width = 0;
+    int charSize;
+
+    if (value == NULL || maxWidth <= 0)
+    {
+        *visibleWidth = 0;
+        return 0;
+    }
+
+    totalBytes = (int)strlen(value);
+
+    while (bytes < totalBytes && width < maxWidth)
+    {
+        charSize = getUtf8CharSize(value + bytes, (size_t)(totalBytes - bytes));
+
+        if (charSize <= 0)
+        {
+            break;
+        }
+
+        bytes += charSize;
+        width++;
+    }
+
+    *visibleWidth = width;
+    return bytes;
 }
 
 static int normalizeWidth(int width)
@@ -35,20 +118,18 @@ void printBoxTitle(const char title[], int width)
 {
     int normalizedWidth = normalizeWidth(width);
     int innerWidth = normalizedWidth - 2;
-    int titleLength = (int)strlen(title);
     int visibleLength;
+    int titleBytes;
     int padding;
     int leftPadding;
     int rightPadding;
 
-    if (titleLength > innerWidth - 2)
+    if (title == NULL)
     {
-        visibleLength = innerWidth - 2;
+        title = "";
     }
-    else
-    {
-        visibleLength = titleLength;
-    }
+
+    titleBytes = getUtf8Slice(title, innerWidth - 2, &visibleLength);
 
     padding = innerWidth - visibleLength;
     leftPadding = padding / 2;
@@ -58,7 +139,7 @@ void printBoxTitle(const char title[], int width)
     printRepeated('-', innerWidth);
     printf("+\n|");
     printRepeated(' ', leftPadding);
-    printf("%.*s", visibleLength, title);
+    printf("%.*s", titleBytes, title);
     printRepeated(' ', rightPadding);
     printf("|\n+");
     printRepeated('-', innerWidth);
@@ -68,6 +149,41 @@ void printBoxTitle(const char title[], int width)
 void printSectionTitle(const char title[])
 {
     printBoxTitle(title, DEFAULT_UI_WIDTH);
+}
+
+void fprintPaddedText(FILE *stream, const char value[], int width, int alignRight)
+{
+    int visibleWidth;
+    int bytes;
+    int padding;
+
+    if (width < 0)
+    {
+        width = 0;
+    }
+
+    bytes = getUtf8Slice(value, width, &visibleWidth);
+    padding = width - visibleWidth;
+
+    if (alignRight)
+    {
+        fprintRepeated(stream, ' ', padding);
+    }
+
+    if (value != NULL)
+    {
+        fprintf(stream, "%.*s", bytes, value);
+    }
+
+    if (!alignRight)
+    {
+        fprintRepeated(stream, ' ', padding);
+    }
+}
+
+void printPaddedText(const char value[], int width, int alignRight)
+{
+    fprintPaddedText(stdout, value, width, alignRight);
 }
 
 void printMenuOption(int number, const char label[])

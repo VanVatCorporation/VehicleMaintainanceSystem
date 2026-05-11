@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "utils.h"
 
 // Persistence (CSV format)
 
@@ -140,8 +141,14 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
 // Invoice Export (.txt format)
 // Code structures are mine, but the bill graphic (fprintf) are AI generated.
 
+static void formatInvoiceCurrency(char output[], size_t size, long long amount) {
+  snprintf(output, size, "%lld VND", amount);
+}
+
 void exportInvoice(RepairOrder order, Customer customer) {
   char filename[100];
+  char priceText[32];
+  long long total = 0;
   snprintf(filename, sizeof(filename), "invoice_%s.txt", order.orderId);
 
   FILE *file = fopen(filename, "w");
@@ -174,17 +181,25 @@ void exportInvoice(RepairOrder order, Customer customer) {
 
   // Services
   fprintf(file, "SERVICES & PARTS:\n");
-  fprintf(file, "%-30s %10s\n", "Service Name", "Price");
-  int total = 0;
+  fprintPaddedText(file, "Service Name", 30, 0);
+  fprintf(file, " ");
+  fprintPaddedText(file, "Price", 14, 1);
+  fprintf(file, "\n");
   for (int i = 0; i < order.itemCount; i++) {
-    fprintf(file, "%-30s %10d VND\n", order.items[i].name,
-            order.items[i].price);
+    formatInvoiceCurrency(priceText, sizeof(priceText), order.items[i].price);
+    fprintPaddedText(file, order.items[i].name, 30, 0);
+    fprintf(file, " ");
+    fprintPaddedText(file, priceText, 14, 1);
+    fprintf(file, "\n");
     total += order.items[i].price;
   }
   fprintf(file, "------------------------------------------\n");
 
   // Total
-  fprintf(file, "TOTAL AMOUNT: %18d VND\n", total);
+  formatInvoiceCurrency(priceText, sizeof(priceText), total);
+  fprintf(file, "TOTAL AMOUNT: ");
+  fprintPaddedText(file, priceText, 18, 1);
+  fprintf(file, "\n");
   fprintf(file, "==========================================\n");
   fprintf(file, "=      Thank you for your business!      =\n");
   fprintf(file, "==========================================\n");

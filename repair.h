@@ -35,7 +35,7 @@ typedef struct {
 void generateOrderId(char orderId[], int counter);
 RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount);
 void printRepairOrder(RepairOrder order);
-int calculateTotal(RepairOrder order);
+long long calculateTotal(RepairOrder order);
 
 // status
 const char* getStatusText(Status status);
