@@ -163,7 +163,15 @@ void exportInvoice(RepairOrder order, Customer customer) {
 
   // Timestamp
   time_t now = time(NULL);
-  fprintf(file, "Date: %s", ctime(&now));
+  char dateText[32];
+  struct tm *nowInfo = localtime(&now);
+
+  if (nowInfo == NULL ||
+      strftime(dateText, sizeof(dateText), "%d/%m/%Y %H:%M:%S", nowInfo) == 0) {
+    strcpy(dateText, "Unknown");
+  }
+
+  fprintf(file, "Date: %s\n", dateText);
   fprintf(file, "Order ID: %s\n", order.orderId);
   fprintf(file, "------------------------------------------\n");
 
