@@ -177,7 +177,6 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
 {
     RepairOrder order;
     int index;
-    int i;
 
     printSectionTitle("CREATE REPAIR ORDER");
     generateOrderId(order.orderId, counter);
@@ -260,13 +259,17 @@ RepairOrder updateStatus(RepairOrder order)
             printError("Invalid choice. Please try again.");
             continue;
         }
-
-        switch (choice)
+        if(choice - 1 > order.status)
         {
-            case 1: order.status = RECEIVED; return order;
-            case 2: order.status = UNDER_REPAIRED; return order;
-            case 3: order.status = COMPLETE; return order;
-            default: printError("Invalid choice. Please try again.");
+            switch (choice)
+            {
+                case 1: order.status = RECEIVED; return order;
+                case 2: order.status = UNDER_REPAIRED; return order;
+                case 3: order.status = COMPLETE; return order;
+                default: printError("Invalid choice. Please try again.");
+            }
+        }else{
+            printf("Status isn't reversible. Please try again.");
         }
     }
 }
