@@ -53,6 +53,7 @@ int calculateTotal(RepairOrder order);
 // service management
 int findServiceIndexById(Service services[], int count, char serviceId[]);
 void addService(Service services[], int *serviceCount);
+void updateService(Service services[], int serviceCount);
 
 // repair order management
 void viewRepairOrderHistory(RepairOrder orders[],int orderCount, Customer customers[], int customerCount);
