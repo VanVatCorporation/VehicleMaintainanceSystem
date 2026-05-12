@@ -14,13 +14,35 @@
 // create order Id
 void generateOrderId(char orderId[], int counter)
 {
-    snprintf(orderId, 10, "RO%06d", counter + 1);
+    int nextId = counter + 1;
+
+    if (nextId < 0)
+    {
+        nextId = 0;
+    }
+    else if (nextId > 999999)
+    {
+        nextId = 999999;
+    }
+
+    snprintf(orderId, 10, "RO%06d", nextId);
 }
 
 // create service Id 
 void generateServiceId(char serviceId[], int counter)
 {
-    snprintf(serviceId, 10, "SV%06d", counter + 1);
+    int nextId = counter + 1;
+
+    if (nextId < 0)
+    {
+        nextId = 0;
+    }
+    else if (nextId > 999999)
+    {
+        nextId = 999999;
+    }
+
+    snprintf(serviceId, 10, "SV%06d", nextId);
 }
 
 // find service by Id
@@ -118,6 +140,7 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
     int i;
     char serviceId[10];
     int index;
+    char priceText[32];
 
     printSectionTitle("SERVICE DETAILS");
     order.itemCount = inputServiceCount();
@@ -130,22 +153,29 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
     }
 
     printBoxTitle("AVAILABLE SERVICES", 64);
-    printOrderDivider();
-    printf("| %-10s | %-25s | %-12s |\n",
-           "Service ID",
-           "Service Name",
-           "Price");
-    printOrderDivider();
+    printf("+------------+---------------------------+------------------+\n");
+    printf("| ");
+    printPaddedText("Service ID", 10, 0);
+    printf(" | ");
+    printPaddedText("Service Name", 25, 0);
+    printf(" | ");
+    printPaddedText("Price", 16, 0);
+    printf(" |\n");
+    printf("+------------+---------------------------+------------------+\n");
 
     for (i = 0; i < serviceCount; i++)
     {
-        printf("| %-10s | %-25.25s | %10d VND |\n",
-               services[i].serviceId,
-               services[i].name,
-               services[i].price);
+        snprintf(priceText, sizeof(priceText), "%d VND", services[i].price);
+        printf("| ");
+        printPaddedText(services[i].serviceId, 10, 0);
+        printf(" | ");
+        printPaddedText(services[i].name, 25, 0);
+        printf(" | ");
+        printPaddedText(priceText, 16, 1);
+        printf(" |\n");
     }
 
-    printOrderDivider();
+    printf("+------------+---------------------------+------------------+\n");
 
     for (i = 0; i < order.itemCount; i++)
     {
@@ -248,6 +278,7 @@ const char* getStatusText(Status status)
 RepairOrder updateStatus(RepairOrder order)
 {
     int choice;
+    Status nextStatus;
 
     while (1)
     {
@@ -263,17 +294,29 @@ RepairOrder updateStatus(RepairOrder order)
             printError("Invalid choice. Please try again.");
             continue;
         }
-        if(choice - 1 > order.status)
+        switch (choice)
         {
-            switch (choice)
-            {
-                case 1: order.status = RECEIVED; return order;
-                case 2: order.status = UNDER_REPAIRED; return order;
-                case 3: order.status = COMPLETE; return order;
-                default: printError("Invalid choice. Please try again.");
-            }
-        }else{
-            printf("Status isn't reversible. Please try again.");
+            case 1: nextStatus = RECEIVED; break;
+            case 2: nextStatus = UNDER_REPAIRED; break;
+            case 3: nextStatus = COMPLETE; break;
+            default:
+                printError("Invalid choice. Please try again.");
+                continue;
+        }
+
+        if (nextStatus > order.status)
+        {
+            order.status = nextStatus;
+            return order;
+        }
+        else if (nextStatus == order.status)
+        {
+            printInfo("Status unchanged.");
+            return order;
+        }
+        else
+        {
+            printError("Status is not reversible. Please try again.");
         }
     }
 }
@@ -351,6 +394,9 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     char phone[11];
     int i;
     int found = 0;
+
+    (void)customers;
+    (void)customerCount;
 
     printSectionTitle("REPAIR ORDER HISTORY");
     
