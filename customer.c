@@ -9,11 +9,13 @@
 #define CUSTOMER_FIELD_WIDTH 16
 #define CUSTOMER_VALUE_WIDTH 47
 
+// Kiểm tra chuỗi rỗng sau khi input đã được trim.
 static int isBlank(char value[])
 {
     return value[0] == '\0';
 }
 
+// So sánh hai chuỗi không phân biệt chữ hoa/thường.
 static int equalsIgnoreCase(char first[], char second[])
 {
     int i = 0;
@@ -31,7 +33,7 @@ static int equalsIgnoreCase(char first[], char second[])
     return first[i] == '\0' && second[i] == '\0';
 }
 
-// Display options after a failed search.
+// Hiển thị lựa chọn sau khi tìm kiếm thất bại.
 static int askSearchOption(void)
 {
     int choice;
@@ -61,6 +63,7 @@ static int askSearchOption(void)
     return 0;
 }
 
+// Kiểm tra trùng biển số nhưng bỏ qua khách hàng đang được sửa.
 static int isDuplicateCarPlateExcept(Customer customers[], int customerCount, char carPlate[], int exceptIndex)
 {
     int i;
@@ -76,6 +79,7 @@ static int isDuplicateCarPlateExcept(Customer customers[], int customerCount, ch
     return 0;
 }
 
+// Nhập và kiểm tra họ tên. Nếu allowEmpty = 1 thì Enter rỗng nghĩa là giữ giá trị cũ.
 static int inputFullName(char fullName[], char prompt[], int allowEmpty)
 {
     char input[INPUT_LENGTH];
@@ -111,6 +115,7 @@ static int inputFullName(char fullName[], char prompt[], int allowEmpty)
     }
 }
 
+// Nhập số điện thoại mới, đồng thời kiểm tra đúng định dạng và không trùng.
 static int inputPhoneNumber(char phoneNumber[], Customer customers[], int customerCount)
 {
     char input[INPUT_LENGTH];
@@ -125,7 +130,7 @@ static int inputPhoneNumber(char phoneNumber[], Customer customers[], int custom
             continue;
         }
 
-        // Validate phone number format and check for duplicates.
+        // SĐT là định danh duy nhất của khách hàng nên phải validate và chặn trùng.
         if (!isValidPhoneNumber(input))
         {
             printError("Invalid phone number. Please try again.");
@@ -142,6 +147,7 @@ static int inputPhoneNumber(char phoneNumber[], Customer customers[], int custom
     }
 }
 
+// Nhập biển số, chuẩn hóa về một dạng chung rồi mới validate và kiểm tra trùng.
 static int inputCarPlate(char carPlate[], char prompt[], int allowEmpty, Customer customers[], int customerCount, int exceptIndex)
 {
     char input[INPUT_LENGTH];
@@ -187,6 +193,7 @@ static int inputCarPlate(char carPlate[], char prompt[], int allowEmpty, Custome
     }
 }
 
+// Nhập loại xe. Khi cập nhật, người dùng có thể Enter rỗng để giữ dữ liệu hiện tại.
 static int inputCarType(char carType[], char prompt[], int allowEmpty)
 {
     char input[INPUT_LENGTH];
@@ -222,13 +229,14 @@ static int inputCarType(char carType[], char prompt[], int allowEmpty)
     }
 }
 
+// Tìm khách hàng cần cập nhật bằng SĐT, giới hạn số lần nhập sai để tránh vòng lặp dài.
 static int findCustomerForUpdate(Customer customers[], int customerCount)
 {
     char phoneNumber[INPUT_LENGTH];
     int attempts = 0;
     int index;
 
-    // Allow the user up to 5 attempts to enter a valid phone number.
+    // Cho người dùng tối đa 5 lần nhập SĐT hợp lệ để tìm khách hàng.
     while (attempts < MAX_UPDATE_ATTEMPTS)
     {
         printf("Enter phone number to update: ");
@@ -266,6 +274,7 @@ static int findCustomerForUpdate(Customer customers[], int customerCount)
     return -1;
 }
 
+// Menu chọn trường thông tin được phép sửa. Không cho sửa SĐT theo yêu cầu đề bài.
 static void displayUpdateMenu(void)
 {
     printSectionTitle("UPDATE CUSTOMER");
@@ -276,11 +285,13 @@ static void displayUpdateMenu(void)
     printf("\nSelect option: ");
 }
 
+// In đường kẻ ngang của bảng thông tin khách hàng.
 static void printCustomerDivider(void)
 {
     printf("+------------------+-------------------------------------------------+\n");
 }
 
+// In một dòng text trong bảng, dùng padding UTF-8 để không lệch khi có tiếng Việt.
 static void printCustomerTextRow(const char field[], const char value[])
 {
     printf("| ");
@@ -290,6 +301,7 @@ static void printCustomerTextRow(const char field[], const char value[])
     printf(" |\n");
 }
 
+// Chuyển số sang chuỗi để tái sử dụng cùng format bảng với các dòng text.
 static void printCustomerIntRow(const char field[], int value)
 {
     char valueText[16];
@@ -298,7 +310,7 @@ static void printCustomerIntRow(const char field[], int value)
     printCustomerTextRow(field, valueText);
 }
 
-// Display customer information
+// Hiển thị đầy đủ hồ sơ khách hàng theo dạng bảng.
 void displayCustomer(Customer c)
 {
     printBoxTitle("CUSTOMER PROFILE", 70);
@@ -312,7 +324,7 @@ void displayCustomer(Customer c)
     printCustomerDivider();
 }
 
-// Find customer index by phone number
+// Tìm vị trí khách hàng trong mảng bằng số điện thoại.
 int findCustomerIndexByPhone(Customer customers[], int customerCount, char phoneNumber[])
 {
     int i;
@@ -328,7 +340,7 @@ int findCustomerIndexByPhone(Customer customers[], int customerCount, char phone
     return -1;
 }
 
-// Find customer index by car plate
+// Tìm vị trí khách hàng trong mảng bằng biển số xe.
 int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPlate[])
 {
     int i;
@@ -344,7 +356,7 @@ int findCustomerIndexByPlate(Customer customers[], int customerCount, char carPl
     return -1;
 }
 
-// Check for duplicate phone numbers
+// Kiểm tra số điện thoại đã tồn tại trong danh sách chưa.
 int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNumber[])
 {
     int i;
@@ -360,12 +372,13 @@ int isDuplicatePhoneNumber(Customer customers[], int customerCount, char phoneNu
     return 0;
 }
 
+// Kiểm tra biển số đã tồn tại trong danh sách chưa.
 int isDuplicateCarPlate(Customer customers[], int customerCount, char carPlate[])
 {
     return isDuplicateCarPlateExcept(customers, customerCount, carPlate, -1);
 }
 
-// Generate a unique customer ID based on the current customer count
+// Sinh mã khách hàng dạng CU000001 dựa trên số lượng khách hiện có.
 void generateCustomerId(char customerId[], int customerCount)
 {
     int nextId = customerCount + 1;
@@ -382,7 +395,7 @@ void generateCustomerId(char customerId[], int customerCount)
     snprintf(customerId, ID_LENGTH, "CU%06d", nextId);
 }
 
-// Search and display customer by phone number
+// Tìm kiếm và hiển thị khách hàng theo số điện thoại.
 void searchCustomerByPhone(Customer customers[], int customerCount)
 {
     char phoneNumber[INPUT_LENGTH];
@@ -424,7 +437,7 @@ void searchCustomerByPhone(Customer customers[], int customerCount)
     }
 }
 
-// Search and display customer by car plate
+// Tìm kiếm và hiển thị khách hàng theo biển số xe.
 void searchCustomerByPlate(Customer customers[], int customerCount)
 {
     char carPlate[INPUT_LENGTH];
@@ -468,27 +481,27 @@ void searchCustomerByPlate(Customer customers[], int customerCount)
     }
 }
 
-// Add a new customer to the system
+// Thêm khách hàng mới vào hệ thống.
 void addCustomer(Customer customers[], int *customerCount)
 {
     Customer newCustomer;
 
     printSectionTitle("ADD CUSTOMER");
 
-    // Check if the customer list is full before adding a new customer
+    // Không cho thêm vượt quá giới hạn 10.000 khách hàng của đề bài.
     if (*customerCount >= MAX_CUSTOMERS)
     {
         printError("Customer list is full. Cannot add more customers.");
         return;
     }
 
-    // Get customer information
+    // Nhập lần lượt các thông tin bắt buộc của khách hàng.
     inputFullName(newCustomer.fullName, "Enter full name: ", 0);
     inputPhoneNumber(newCustomer.phoneNumber, customers, *customerCount);
     inputCarPlate(newCustomer.carPlate, "Enter car plate: ", 0, customers, *customerCount, -1);
     inputCarType(newCustomer.carType, "Enter car type: ", 0);
 
-    // Generate a unique customer ID and initialize order count
+    // Sinh mã khách hàng tự động và khởi tạo số phiếu sửa bằng 0.
     generateCustomerId(newCustomer.customerId, *customerCount);
     newCustomer.orderCount = 0;
 
@@ -499,7 +512,7 @@ void addCustomer(Customer customers[], int *customerCount)
     displayCustomer(newCustomer);
 }
 
-// Update existing customer information
+// Cập nhật thông tin khách hàng hiện có, ngoại trừ SĐT vì đây là định danh duy nhất.
 void updateCustomer(Customer customers[], int *customerCount)
 {
     int index;
@@ -508,6 +521,7 @@ void updateCustomer(Customer customers[], int *customerCount)
 
     printSectionTitle("FIND CUSTOMER TO UPDATE");
 
+    // Tìm đúng khách hàng trước, nếu không thấy thì cho phép thử lại/thêm mới/thoát.
     while (1)
     {
         index = findCustomerForUpdate(customers, *customerCount);
@@ -551,6 +565,7 @@ void updateCustomer(Customer customers[], int *customerCount)
     printSuccess("Customer found. Proceeding to update.");
     displayCustomer(customers[index]);
 
+    // Sau khi tìm thấy, người dùng có thể cập nhật nhiều trường trước khi kết thúc.
     while (1)
     {
         displayUpdateMenu();

@@ -3,23 +3,27 @@
 #include <ctype.h>
 #include "customer.h"
 
+// Kiểm tra chuỗi rỗng sau khi input đã được trim.
 static int isBlank(char value[])
 {
     return value[0] == '\0';
 }
 
+// Kiểm tra chữ cái seri biển số thông dụng ở Việt Nam.
 static int isAllowedSeriesLetter(char value)
 {
-    // Regular Vietnamese car plate series letters.
+    // Các chữ cái seri biển số thông dụng ở Việt Nam.
     return strchr("ABCDEFGHKLMNPSTUVXYZ", value) != NULL;
 }
 
+// Kiểm tra seri một chữ cái thuộc nhóm đặc biệt.
 static int isSpecialOneLetterSeries(char value)
 {
-    // R is used for trailers and semi-trailers.
+    // R dùng cho rơ-moóc và sơ-mi rơ-moóc.
     return value == 'R';
 }
 
+// Kiểm tra các seri hai chữ cái đặc biệt như xe ngoại giao, quân đội, liên doanh...
 static int isSpecialTwoLetterSeries(char first, char second)
 {
     char series[3];
@@ -28,7 +32,7 @@ static int isSpecialTwoLetterSeries(char first, char second)
     series[1] = second;
     series[2] = '\0';
 
-    // MD is used as ASCII input for Vietnamese electric motorbike series.
+    // MD được dùng thay cho MĐ để nhập bằng ký tự ASCII trong terminal.
     return strcmp(series, "CD") == 0 ||
            strcmp(series, "LD") == 0 ||
            strcmp(series, "DA") == 0 ||
@@ -42,6 +46,7 @@ static int isSpecialTwoLetterSeries(char first, char second)
            strcmp(series, "NN") == 0;
 }
 
+// Kiểm tra phần số thứ tự cuối biển số có đúng 5 chữ số không.
 static int hasFiveOrderDigits(char carPlate[], int startIndex)
 {
     int i;
@@ -57,6 +62,7 @@ static int hasFiveOrderDigits(char carPlate[], int startIndex)
     return strlen(carPlate + startIndex) == 5;
 }
 
+// Họ tên không được rỗng và không được chứa chữ số.
 int isValidFullName(char fullName[])
 {
     int i;
@@ -77,7 +83,7 @@ int isValidFullName(char fullName[])
     return 1;
 }
 
-// Validate phone number format.
+// SĐT phải có đúng 10 chữ số và bắt đầu bằng số 0.
 int isValidPhoneNumber(char phoneNumber[])
 {
     size_t length = strlen(phoneNumber);
@@ -85,12 +91,12 @@ int isValidPhoneNumber(char phoneNumber[])
 
     if (length != 10)
     {
-        return 0; // Phone number must be exactly 10 digits.
+        return 0; // SĐT phải có đúng 10 chữ số.
     }
 
     if (phoneNumber[0] != '0')
     {
-        return 0; // Phone number must start with '0'.
+        return 0; // SĐT Việt Nam trong project phải bắt đầu bằng '0'.
     }
 
     for (i = 0; i < length; i++)
@@ -104,14 +110,15 @@ int isValidPhoneNumber(char phoneNumber[])
     return 1;
 }
 
+// Validate biển số sau khi đã bỏ dấu phân cách và chuyển về chữ hoa.
 int isValidCarPlate(char carPlate[])
 {
     size_t length = strlen(carPlate);
 
-    // Accepted after normalization:
-    // 30A12345  = car format 30A-123.45
-    // 29AA12345 = motorbike format 29-AA 123.45
-    // 30LD12345 = special series such as LD, NG, CV, NN.
+    // Các dạng hợp lệ sau khi chuẩn hóa:
+    // 30A12345  = dạng hiển thị 30A-123.45
+    // 29AA12345 = dạng hiển thị 29-AA 123.45
+    // 30LD12345 = seri đặc biệt như LD, NG, CV, NN.
     if (length != 8 && length != 9)
     {
         return 0;
@@ -124,6 +131,7 @@ int isValidCarPlate(char carPlate[])
 
     if (length == 8)
     {
+        // Dạng 2 số tỉnh + 1 chữ seri + 5 số thứ tự.
         if (!isAllowedSeriesLetter(carPlate[2]) && !isSpecialOneLetterSeries(carPlate[2]))
         {
             return 0;
@@ -132,6 +140,7 @@ int isValidCarPlate(char carPlate[])
         return hasFiveOrderDigits(carPlate, 3);
     }
 
+    // Dạng 2 số tỉnh + 2 chữ seri + 5 số thứ tự.
     if (!isSpecialTwoLetterSeries(carPlate[2], carPlate[3]) &&
         (!isAllowedSeriesLetter(carPlate[2]) || !isAllowedSeriesLetter(carPlate[3])))
     {
@@ -141,12 +150,13 @@ int isValidCarPlate(char carPlate[])
     return hasFiveOrderDigits(carPlate, 4);
 }
 
+// Chuẩn hóa biển số để mọi cách nhập như "30A-123.45" hay "30a 12345" đều so sánh được.
 void normalizeCarPlate(char carPlate[])
 {
     int readIndex;
     int writeIndex = 0;
 
-    // Remove common separators and convert letters to uppercase.
+    // Bỏ các dấu phân cách phổ biến và chuyển chữ cái về in hoa.
     for (readIndex = 0; carPlate[readIndex] != '\0'; readIndex++)
     {
         unsigned char current = (unsigned char)carPlate[readIndex];
