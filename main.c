@@ -17,6 +17,9 @@ int customerCount = 0;
 RepairOrder orders[MAX_REPAIR_ORDERS];
 int orderCount = 0;
 
+Service services[MAX_SERVICES];
+int serviceCount = 0;
+
 static void printAppHeader(void)
 {
     printBoxTitle("MOTORBIKE REPAIR SHOP MANAGEMENT", APP_HEADER_WIDTH);
@@ -50,6 +53,11 @@ static void printRepairMenu(void)
     printSectionTitle("REPAIR ORDER MANAGEMENT");
     printMenuOption(1, "Create repair order");
     printMenuOption(2, "View or update order status");
+    printMenuOption(3, "Add service");
+    printMenuOption(4, "Update service");
+    printMenuOption(5, "List all repair orders");
+    printMenuOption(6, "Filter repair orders by status");
+    printMenuOption(7, "View repair order history");
     printMenuBack();
     printf("\nSelect option: ");
 }
@@ -157,12 +165,27 @@ static void openRepairMenu(void)
                     break;
                 }
 
-                orders[orderCount] = createRepairOrder(orderCount + 1, customers, customerCount);
+                orders[orderCount] = createRepairOrder(orderCount, customers, customerCount, services, serviceCount);
                 orderCount++;
                 printSuccess("Repair order created.");
                 break;
             case 2:
                 viewOrUpdateOrderStatus();
+                break;
+            case 3:
+                addService(services, &serviceCount);
+                break;
+            case 4:
+                updateService(services, serviceCount);
+                break;
+            case 5:
+                listRepairOrders(orders, orderCount);
+                break;
+            case 6:
+                filterRepairOrdersByStatus(orders, orderCount);
+                break;
+            case 7:
+                viewRepairOrderHistory(orders, orderCount, customers, customerCount);
                 break;
             case 0:
                 return;
