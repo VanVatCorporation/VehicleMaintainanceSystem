@@ -244,6 +244,58 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
   fclose(file);
 }
 
+void saveServices(Service services[], int count) {
+  FILE *file = fopen(SERVICE_FILE, "w");
+  if (file == NULL) {
+    printf("Error: Could not open %s for writing.\n", SERVICE_FILE);
+    return;
+  }
+
+  for (int i = 0; i < count; i++) {
+    writeCsvField(file, services[i].serviceId);
+    fputc(',', file);
+    writeCsvField(file, services[i].name);
+    fprintf(file, ",%d\n", services[i].price);
+  }
+
+  fclose(file);
+}
+
+void loadServices(Service services[], int *count) {
+  FILE *file = fopen(SERVICE_FILE, "r");
+  if (file == NULL) {
+    *count = 0;
+    return;
+  }
+
+  *count = 0;
+  char line[512];
+  while (fgets(line, sizeof(line), file)) {
+    Service parsedService;
+    const char *cursor = line;
+    char priceText[16];
+
+    if (*count >= MAX_SERVICES) {
+      break;
+    }
+
+    memset(&parsedService, 0, sizeof(parsedService));
+
+    if (readRequiredCsvField(&cursor, parsedService.serviceId, sizeof(parsedService.serviceId)) &&
+        readRequiredCsvField(&cursor, parsedService.name, sizeof(parsedService.name)) &&
+        readRequiredCsvField(&cursor, priceText, sizeof(priceText))) {
+      parsedService.price = atoi(priceText);
+
+      if (parsedService.price >= 0) {
+        services[*count] = parsedService;
+        (*count)++;
+      }
+    }
+  }
+
+  fclose(file);
+}
+
 // Invoice Export (.txt format)
 // Code structures are mine, but the bill graphic (fprintf) are AI generated.
 

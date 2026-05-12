@@ -3,8 +3,6 @@
 #include "customer.h"
 #include "repair.h"
 
-#define MAX_SERVICES 100
-
 typedef struct ServiceCount {
     char serviceName[50];
     int count;
