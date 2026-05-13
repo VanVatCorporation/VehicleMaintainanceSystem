@@ -127,11 +127,20 @@ static void viewOrUpdateOrderStatus(void)
     }
 
     printRepairOrder(orders[found]);
+    Status previousStatus = orders[found].status;
     orders[found] = updateStatus(orders[found]);
-    printSuccess("Order status updated.");
+
+    if (orders[found].status == previousStatus)
+    {
+        printInfo("Order status unchanged.");
+    }
+    else
+    {
+        printSuccess("Order status updated.");
+    }
 
     // Mission 14: Export invoice if complete
-    if (orders[found].status == COMPLETE)
+    if (previousStatus != COMPLETE && orders[found].status == COMPLETE)
     {
         int cIndex = findCustomerIndexByPhone(customers, customerCount, orders[found].customerPhone);
 
@@ -166,6 +175,14 @@ static void openRepairMenu(void)
                 }
 
                 orders[orderCount] = createRepairOrder(orderCount, customers, customerCount, services, serviceCount);
+                {
+                    int customerIndex = findCustomerIndexByPhone(customers, customerCount, orders[orderCount].customerPhone);
+
+                    if (customerIndex != -1)
+                    {
+                        customers[customerIndex].orderCount++;
+                    }
+                }
                 orderCount++;
                 printSuccess("Repair order created.");
                 break;

@@ -48,7 +48,7 @@ void generateServiceId(char serviceId[], int counter);
 // repair order
 RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount, Service services[], int serviceCount);
 void printRepairOrder(RepairOrder order);
-int calculateTotal(RepairOrder order);
+long long calculateTotal(RepairOrder order);
 
 // service management
 int findServiceIndexById(Service services[], int count, char serviceId[]);

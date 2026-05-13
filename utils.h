@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <stddef.h>
+#include <stdio.h>
 
 // Common input helper functions
 void removeTrailingNewline(char value[]);
@@ -12,6 +13,8 @@ int readInt(int *value);
 // Console UI helper functions
 void printBoxTitle(const char title[], int width);
 void printSectionTitle(const char title[]);
+void printPaddedText(const char value[], int width, int alignRight);
+void fprintPaddedText(FILE *stream, const char value[], int width, int alignRight);
 void printMenuOption(int number, const char label[]);
 void printMenuBack(void);
 void printSuccess(const char message[]);

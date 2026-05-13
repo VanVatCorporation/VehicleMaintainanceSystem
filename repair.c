@@ -6,17 +6,43 @@
 #include "utils.h"
 
 #define INPUT_LENGTH 100
+#define ORDER_NO_WIDTH 3
+#define ORDER_SERVICE_WIDTH 38
+#define ORDER_PRICE_WIDTH 16
+#define ORDER_TABLE_WIDTH (ORDER_NO_WIDTH + ORDER_SERVICE_WIDTH + ORDER_PRICE_WIDTH + 10)
 
 // create order Id
 void generateOrderId(char orderId[], int counter)
 {
-    snprintf(orderId, 10, "RO%06d", counter + 1);
+    int nextId = counter + 1;
+
+    if (nextId < 0)
+    {
+        nextId = 0;
+    }
+    else if (nextId > 999999)
+    {
+        nextId = 999999;
+    }
+
+    snprintf(orderId, 10, "RO%06d", nextId);
 }
 
 // create service Id 
 void generateServiceId(char serviceId[], int counter)
 {
-    snprintf(serviceId, 10, "SV%06d", counter + 1);
+    int nextId = counter + 1;
+
+    if (nextId < 0)
+    {
+        nextId = 0;
+    }
+    else if (nextId > 999999)
+    {
+        nextId = 999999;
+    }
+
+    snprintf(serviceId, 10, "SV%06d", nextId);
 }
 
 // find service by Id
@@ -114,6 +140,7 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
     int i;
     char serviceId[10];
     int index;
+    char priceText[32];
 
     printSectionTitle("SERVICE DETAILS");
     order.itemCount = inputServiceCount();
@@ -126,22 +153,29 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
     }
 
     printBoxTitle("AVAILABLE SERVICES", 64);
-    printOrderDivider();
-    printf("| %-10s | %-25s | %-12s |\n",
-           "Service ID",
-           "Service Name",
-           "Price");
-    printOrderDivider();
+    printf("+------------+---------------------------+------------------+\n");
+    printf("| ");
+    printPaddedText("Service ID", 10, 0);
+    printf(" | ");
+    printPaddedText("Service Name", 25, 0);
+    printf(" | ");
+    printPaddedText("Price", 16, 0);
+    printf(" |\n");
+    printf("+------------+---------------------------+------------------+\n");
 
     for (i = 0; i < serviceCount; i++)
     {
-        printf("| %-10s | %-25.25s | %10d VND |\n",
-               services[i].serviceId,
-               services[i].name,
-               services[i].price);
+        snprintf(priceText, sizeof(priceText), "%d VND", services[i].price);
+        printf("| ");
+        printPaddedText(services[i].serviceId, 10, 0);
+        printf(" | ");
+        printPaddedText(services[i].name, 25, 0);
+        printf(" | ");
+        printPaddedText(priceText, 16, 1);
+        printf(" |\n");
     }
 
-    printOrderDivider();
+    printf("+------------+---------------------------+------------------+\n");
 
     for (i = 0; i < order.itemCount; i++)
     {
@@ -215,9 +249,9 @@ RepairOrder createRepairOrder(int counter, Customer customers[], int customerCou
 }
 
 // caculate money when print order
-int calculateTotal(RepairOrder order)
+long long calculateTotal(RepairOrder order)
 {
-    int total = 0;
+    long long total = 0;
     int i;
 
     for (i = 0; i < order.itemCount; i++)
@@ -244,6 +278,7 @@ const char* getStatusText(Status status)
 RepairOrder updateStatus(RepairOrder order)
 {
     int choice;
+    Status nextStatus;
 
     while (1)
     {
@@ -259,17 +294,29 @@ RepairOrder updateStatus(RepairOrder order)
             printError("Invalid choice. Please try again.");
             continue;
         }
-        if(choice - 1 > order.status)
+        switch (choice)
         {
-            switch (choice)
-            {
-                case 1: order.status = RECEIVED; return order;
-                case 2: order.status = UNDER_REPAIRED; return order;
-                case 3: order.status = COMPLETE; return order;
-                default: printError("Invalid choice. Please try again.");
-            }
-        }else{
-            printf("Status isn't reversible. Please try again.");
+            case 1: nextStatus = RECEIVED; break;
+            case 2: nextStatus = UNDER_REPAIRED; break;
+            case 3: nextStatus = COMPLETE; break;
+            default:
+                printError("Invalid choice. Please try again.");
+                continue;
+        }
+
+        if (nextStatus > order.status)
+        {
+            order.status = nextStatus;
+            return order;
+        }
+        else if (nextStatus == order.status)
+        {
+            printInfo("Status unchanged.");
+            return order;
+        }
+        else
+        {
+            printError("Status is not reversible. Please try again.");
         }
     }
 }
@@ -347,6 +394,9 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     char phone[11];
     int i;
     int found = 0;
+
+    (void)customers;
+    (void)customerCount;
 
     printSectionTitle("REPAIR ORDER HISTORY");
     
@@ -527,7 +577,24 @@ void listRepairOrders(RepairOrder orders[], int orderCount)
 
  void printOrderDivider(void)
 {
-    printf("+-----+----------------------------------------+--------------+\n");
+    int i;
+
+    printf("+");
+    for (i = 0; i < ORDER_NO_WIDTH + 2; i++)
+    {
+        printf("-");
+    }
+    printf("+");
+    for (i = 0; i < ORDER_SERVICE_WIDTH + 2; i++)
+    {
+        printf("-");
+    }
+    printf("+");
+    for (i = 0; i < ORDER_PRICE_WIDTH + 2; i++)
+    {
+        printf("-");
+    }
+    printf("+\n");
 }
 
  void printOrderSummaryRow(const char label[], const char value[])
@@ -535,18 +602,25 @@ void listRepairOrders(RepairOrder orders[], int orderCount)
     printf("  %-12s : %s\n", label, value);
 }
 
+static void formatCurrency(char output[], size_t size, long long amount)
+{
+    snprintf(output, size, "%lld VND", amount);
+}
+
 // print repair order
 void printRepairOrder(RepairOrder order)
 {
     int i;
     char createdText[32];
+    char numberText[16];
+    char priceText[32];
 
     if (strftime(createdText, sizeof(createdText), "%Y-%m-%d %H:%M", localtime(&order.createdDate)) == 0)
     {
         strcpy(createdText, "Unknown");
     }
 
-    printBoxTitle("REPAIR ORDER DETAILS", 64);
+    printBoxTitle("REPAIR ORDER DETAILS", ORDER_TABLE_WIDTH);
     printOrderSummaryRow("Order ID", order.orderId);
     printOrderSummaryRow("Phone", order.customerPhone);
     printOrderSummaryRow("Created", createdText);
@@ -555,18 +629,36 @@ void printRepairOrder(RepairOrder order)
 
     printf("\n");
     printOrderDivider();
-    printf("| %-3s | %-38s | %-12s |\n", "No", "Service", "Price");
+    printf("| ");
+    printPaddedText("No", ORDER_NO_WIDTH, 0);
+    printf(" | ");
+    printPaddedText("Service", ORDER_SERVICE_WIDTH, 0);
+    printf(" | ");
+    printPaddedText("Price", ORDER_PRICE_WIDTH, 0);
+    printf(" |\n");
     printOrderDivider();
 
     for (i = 0; i < order.itemCount; i++)
     {
-        printf("| %-3d | %-38.38s | %10d VND |\n",
-            i + 1,
-            order.items[i].name,
-            order.items[i].price);
+        snprintf(numberText, sizeof(numberText), "%d", i + 1);
+        formatCurrency(priceText, sizeof(priceText), order.items[i].price);
+        printf("| ");
+        printPaddedText(numberText, ORDER_NO_WIDTH, 1);
+        printf(" | ");
+        printPaddedText(order.items[i].name, ORDER_SERVICE_WIDTH, 0);
+        printf(" | ");
+        printPaddedText(priceText, ORDER_PRICE_WIDTH, 1);
+        printf(" |\n");
     }
 
     printOrderDivider();
-    printf("| %-3s | %-38s | %10d VND |\n", "", "Total", calculateTotal(order));
+    formatCurrency(priceText, sizeof(priceText), calculateTotal(order));
+    printf("| ");
+    printPaddedText("", ORDER_NO_WIDTH, 0);
+    printf(" | ");
+    printPaddedText("Total", ORDER_SERVICE_WIDTH, 0);
+    printf(" | ");
+    printPaddedText(priceText, ORDER_PRICE_WIDTH, 1);
+    printf(" |\n");
     printOrderDivider();
 }

@@ -6,8 +6,8 @@
 #include "report.h"
 #include "repair.h"
 
-int calculateDailyRevenue(time_t date, RepairOrder orders[], int orderCount) {
-    int totalRevenue = 0;
+long long calculateDailyRevenue(time_t date, RepairOrder orders[], int orderCount) {
+    long long totalRevenue = 0;
     
     // Convert target date to struct tm for comparison
     struct tm targetDate = *localtime(&date);

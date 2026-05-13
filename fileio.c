@@ -3,8 +3,103 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "utils.h"
 
 // Persistence (CSV format)
+
+static void writeCsvField(FILE *file, const char value[]) {
+  int needsQuotes = 0;
+
+  if (value == NULL) {
+    value = "";
+  }
+
+  for (const char *current = value; *current != '\0'; current++) {
+    if (*current == ',' || *current == '"' || *current == '\n' || *current == '\r') {
+      needsQuotes = 1;
+      break;
+    }
+  }
+
+  if (!needsQuotes) {
+    fprintf(file, "%s", value);
+    return;
+  }
+
+  fputc('"', file);
+  for (const char *current = value; *current != '\0'; current++) {
+    if (*current == '"') {
+      fputc('"', file);
+    }
+    fputc(*current, file);
+  }
+  fputc('"', file);
+}
+
+static const char *readCsvField(const char *cursor, char output[], size_t size) {
+  size_t length = 0;
+  int quoted = 0;
+
+  if (size > 0) {
+    output[0] = '\0';
+  }
+
+  if (cursor == NULL) {
+    return NULL;
+  }
+
+  if (*cursor == '"') {
+    quoted = 1;
+    cursor++;
+  }
+
+  while (*cursor != '\0') {
+    if (quoted) {
+      if (*cursor == '"') {
+        if (*(cursor + 1) == '"') {
+          if (length + 1 < size) {
+            output[length++] = '"';
+          }
+          cursor += 2;
+          continue;
+        }
+
+        cursor++;
+        break;
+      }
+    } else if (*cursor == ',' || *cursor == '\n' || *cursor == '\r') {
+      break;
+    }
+
+    if (length + 1 < size) {
+      output[length++] = *cursor;
+    }
+    cursor++;
+  }
+
+  if (size > 0) {
+    output[length] = '\0';
+  }
+
+  while (*cursor != '\0' && *cursor != ',' && *cursor != '\n' && *cursor != '\r') {
+    cursor++;
+  }
+
+  if (*cursor == ',') {
+    cursor++;
+  }
+
+  return cursor;
+}
+
+static int readRequiredCsvField(const char **cursor, char output[], size_t size) {
+  if (*cursor == NULL || **cursor == '\0' || **cursor == '\n' || **cursor == '\r') {
+    return 0;
+  }
+
+  *cursor = readCsvField(*cursor, output, size);
+  return *cursor != NULL;
+}
 
 void saveCustomers(Customer customers[], int count) {
   FILE *file = fopen(CUSTOMER_FILE, "w");
@@ -14,10 +109,16 @@ void saveCustomers(Customer customers[], int count) {
   }
 
   for (int i = 0; i < count; i++) {
-    fprintf(file, "%s,%s,%s,%s,%s,%d\n", customers[i].customerId,
-            customers[i].fullName, customers[i].phoneNumber,
-            customers[i].carPlate, customers[i].carType,
-            customers[i].orderCount);
+    writeCsvField(file, customers[i].customerId);
+    fputc(',', file);
+    writeCsvField(file, customers[i].fullName);
+    fputc(',', file);
+    writeCsvField(file, customers[i].phoneNumber);
+    fputc(',', file);
+    writeCsvField(file, customers[i].carPlate);
+    fputc(',', file);
+    writeCsvField(file, customers[i].carType);
+    fprintf(file, ",%d\n", customers[i].orderCount);
   }
 
   fclose(file);
@@ -37,12 +138,20 @@ void loadCustomers(Customer customers[], int *count) {
     if (*count >= MAX_CUSTOMERS)
       break;
 
-    Customer *c = &customers[*count];
-    // Parse CSV line: ID,Name,Phone,Plate,Type,OrderCount
-    // Using sscanf with [^,] to handle spaces within fields
-    if (sscanf(line, "%[^,],%[^,],%[^,],%[^,],%[^,],%d", c->customerId,
-               c->fullName, c->phoneNumber, c->carPlate, c->carType,
-               &c->orderCount) == 6) {
+    Customer parsedCustomer;
+    const char *cursor = line;
+    char orderCountText[16];
+
+    memset(&parsedCustomer, 0, sizeof(parsedCustomer));
+
+    if (readRequiredCsvField(&cursor, parsedCustomer.customerId, sizeof(parsedCustomer.customerId)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.fullName, sizeof(parsedCustomer.fullName)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.phoneNumber, sizeof(parsedCustomer.phoneNumber)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.carPlate, sizeof(parsedCustomer.carPlate)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.carType, sizeof(parsedCustomer.carType)) &&
+        readRequiredCsvField(&cursor, orderCountText, sizeof(orderCountText))) {
+      parsedCustomer.orderCount = atoi(orderCountText);
+      customers[*count] = parsedCustomer;
       (*count)++;
     }
   }
@@ -59,14 +168,18 @@ void saveRepairOrders(RepairOrder orders[], int count) {
 
   for (int i = 0; i < count; i++) {
     // Basic info: OrderID,Phone,Symptom,Date,Status,ItemCount
-    fprintf(file, "%s,%s,%s,%ld,%d,%d", orders[i].orderId,
-            orders[i].customerPhone, orders[i].symptom,
-            (long)orders[i].createdDate, orders[i].status, orders[i].itemCount);
+    writeCsvField(file, orders[i].orderId);
+    fputc(',', file);
+    writeCsvField(file, orders[i].customerPhone);
+    fputc(',', file);
+    writeCsvField(file, orders[i].symptom);
+    fprintf(file, ",%ld,%d,%d", (long)orders[i].createdDate, orders[i].status, orders[i].itemCount);
 
     // Nested items: ServiceName,Price
     for (int j = 0; j < orders[i].itemCount; j++) {
-      fprintf(file, ",%s,%d", orders[i].items[j].name,
-              orders[i].items[j].price);
+      fputc(',', file);
+      writeCsvField(file, orders[i].items[j].name);
+      fprintf(file, ",%d", orders[i].items[j].price);
     }
     fprintf(file, "\n");
   }
@@ -84,53 +197,47 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
   *count = 0;
   char line[1024];
   while (fgets(line, sizeof(line), file)) {
-    // For RepairOrders, parsing is more complex due to variable number of
-    // items. Use strtok to parse the comma-separated values.
-    char *token = strtok(line, ",");
-    if (token == NULL)
+    RepairOrder parsedOrder;
+    const char *cursor = line;
+    char createdText[32];
+    char statusText[16];
+    char itemCountText[16];
+
+    memset(&parsedOrder, 0, sizeof(parsedOrder));
+
+    if (!readRequiredCsvField(&cursor, parsedOrder.orderId, sizeof(parsedOrder.orderId)) ||
+        !readRequiredCsvField(&cursor, parsedOrder.customerPhone, sizeof(parsedOrder.customerPhone)) ||
+        !readRequiredCsvField(&cursor, parsedOrder.symptom, sizeof(parsedOrder.symptom)) ||
+        !readRequiredCsvField(&cursor, createdText, sizeof(createdText)) ||
+        !readRequiredCsvField(&cursor, statusText, sizeof(statusText)) ||
+        !readRequiredCsvField(&cursor, itemCountText, sizeof(itemCountText))) {
       continue;
-
-    RepairOrder *o = &orders[*count];
-
-    // OrderID
-    strncpy(o->orderId, token, 10);
-
-    // Phone
-    token = strtok(NULL, ",");
-    if (token)
-      strncpy(o->customerPhone, token, 11);
-
-    // Symptom
-    token = strtok(NULL, ",");
-    if (token)
-      strncpy(o->symptom, token, 100);
-
-    // Date
-    token = strtok(NULL, ",");
-    if (token)
-      o->createdDate = (time_t)atol(token);
-
-    // Status
-    token = strtok(NULL, ",");
-    if (token)
-      o->status = (Status)atoi(token);
-
-    // ItemCount
-    token = strtok(NULL, ",");
-    if (token)
-      o->itemCount = atoi(token);
-
-    // Items
-    for (int j = 0; j < o->itemCount; j++) {
-      token = strtok(NULL, ",");
-      if (token)
-        strncpy(o->items[j].name, token, 50);
-
-      token = strtok(NULL, ",");
-      if (token)
-        o->items[j].price = atoi(token);
     }
 
+    parsedOrder.createdDate = (time_t)atol(createdText);
+    parsedOrder.status = (Status)atoi(statusText);
+    parsedOrder.itemCount = atoi(itemCountText);
+
+    if (parsedOrder.itemCount < 0) {
+      parsedOrder.itemCount = 0;
+    }
+    if (parsedOrder.itemCount > MAX_ITEMS) {
+      parsedOrder.itemCount = MAX_ITEMS;
+    }
+
+    for (int j = 0; j < parsedOrder.itemCount; j++) {
+      char priceText[16];
+
+      if (!readRequiredCsvField(&cursor, parsedOrder.items[j].name, sizeof(parsedOrder.items[j].name)) ||
+          !readRequiredCsvField(&cursor, priceText, sizeof(priceText))) {
+        parsedOrder.itemCount = j;
+        break;
+      }
+
+      parsedOrder.items[j].price = atoi(priceText);
+    }
+
+    orders[*count] = parsedOrder;
     (*count)++;
   }
 
@@ -140,8 +247,14 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
 // Invoice Export (.txt format)
 // Code structures are mine, but the bill graphic (fprintf) are AI generated.
 
+static void formatInvoiceCurrency(char output[], size_t size, long long amount) {
+  snprintf(output, size, "%lld VND", amount);
+}
+
 void exportInvoice(RepairOrder order, Customer customer) {
   char filename[100];
+  char priceText[32];
+  long long total = 0;
   snprintf(filename, sizeof(filename), "invoice_%s.txt", order.orderId);
 
   FILE *file = fopen(filename, "w");
@@ -156,7 +269,15 @@ void exportInvoice(RepairOrder order, Customer customer) {
 
   // Timestamp
   time_t now = time(NULL);
-  fprintf(file, "Date: %s", ctime(&now));
+  char dateText[32];
+  struct tm *nowInfo = localtime(&now);
+
+  if (nowInfo == NULL ||
+      strftime(dateText, sizeof(dateText), "%d/%m/%Y %H:%M:%S", nowInfo) == 0) {
+    strcpy(dateText, "Unknown");
+  }
+
+  fprintf(file, "Date: %s\n", dateText);
   fprintf(file, "Order ID: %s\n", order.orderId);
   fprintf(file, "------------------------------------------\n");
 
@@ -174,17 +295,25 @@ void exportInvoice(RepairOrder order, Customer customer) {
 
   // Services
   fprintf(file, "SERVICES & PARTS:\n");
-  fprintf(file, "%-30s %10s\n", "Service Name", "Price");
-  int total = 0;
+  fprintPaddedText(file, "Service Name", 30, 0);
+  fprintf(file, " ");
+  fprintPaddedText(file, "Price", 14, 1);
+  fprintf(file, "\n");
   for (int i = 0; i < order.itemCount; i++) {
-    fprintf(file, "%-30s %10d VND\n", order.items[i].name,
-            order.items[i].price);
+    formatInvoiceCurrency(priceText, sizeof(priceText), order.items[i].price);
+    fprintPaddedText(file, order.items[i].name, 30, 0);
+    fprintf(file, " ");
+    fprintPaddedText(file, priceText, 14, 1);
+    fprintf(file, "\n");
     total += order.items[i].price;
   }
   fprintf(file, "------------------------------------------\n");
 
   // Total
-  fprintf(file, "TOTAL AMOUNT: %18d VND\n", total);
+  formatInvoiceCurrency(priceText, sizeof(priceText), total);
+  fprintf(file, "TOTAL AMOUNT: ");
+  fprintPaddedText(file, priceText, 18, 1);
+  fprintf(file, "\n");
   fprintf(file, "==========================================\n");
   fprintf(file, "=      Thank you for your business!      =\n");
   fprintf(file, "==========================================\n");
