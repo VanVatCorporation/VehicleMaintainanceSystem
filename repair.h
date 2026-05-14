@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include "customer.h"
+#include "service.h"
 
 #define MAX_ITEMS 10
 #define MAX_SERVICES 100
@@ -20,13 +21,6 @@ typedef struct {
     int price;
 } RepairItem;
 
-// service
-typedef struct {
-    char serviceId[10];
-    char name[50];
-    int price;
-} Service;
-
 // repair order
 typedef struct {
     char orderId[10];
@@ -43,17 +37,11 @@ typedef struct {
 
 // ID generators
 void generateOrderId(char orderId[], int counter);
-void generateServiceId(char serviceId[], int counter);
 
 // repair order
 RepairOrder createRepairOrder(int counter, Customer customers[], int customerCount, Service services[], int serviceCount);
 void printRepairOrder(RepairOrder order);
 long long calculateTotal(RepairOrder order);
-
-// service management
-int findServiceIndexById(Service services[], int count, char serviceId[]);
-void addService(Service services[], int *serviceCount);
-void updateService(Service services[], int serviceCount);
 
 // repair order management
 void viewRepairOrderHistory(RepairOrder orders[],int orderCount, Customer customers[], int customerCount);

@@ -10,6 +10,11 @@
 #define ORDER_SERVICE_WIDTH 38
 #define ORDER_PRICE_WIDTH 16
 #define ORDER_TABLE_WIDTH (ORDER_NO_WIDTH + ORDER_SERVICE_WIDTH + ORDER_PRICE_WIDTH + 10)
+#define COLOR_RESET "\033[0m"
+#define COLOR_GREEN "\033[32m"
+#define COLOR_YELLOW "\033[33m"
+#define COLOR_GRAY "\033[90m"
+
 
 // create order Id
 void generateOrderId(char orderId[], int counter)
@@ -25,24 +30,8 @@ void generateOrderId(char orderId[], int counter)
         nextId = 999999;
     }
 
-    snprintf(orderId, 10, "RO%06d", nextId);
-}
+    snprintf(orderId, 10, "RO%06d", counter + 1);
 
-// create service Id 
-void generateServiceId(char serviceId[], int counter)
-{
-    int nextId = counter + 1;
-
-    if (nextId < 0)
-    {
-        nextId = 0;
-    }
-    else if (nextId > 999999)
-    {
-        nextId = 999999;
-    }
-
-    snprintf(serviceId, 10, "SV%06d", nextId);
 }
 
 // find service by Id
@@ -86,29 +75,6 @@ static int inputServiceCount(void)
 }
 
 
-static int inputPrice(void)
-{
-    int price;
-
-    while (1)
-    {
-        printf("Price: ");
-
-        if (!readInt(&price))
-        {
-            printError("Invalid price. Please try again.");
-        }
-        else if (price < 0)
-        {
-            printError("Price cannot be negative. Please try again.");
-        }
-        else
-        {
-            return price;
-        }
-    }
-}
-
 static void inputCustomerPhone(char phoneNumber[])
 {
     char input[INPUT_LENGTH];
@@ -143,7 +109,6 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
     char priceText[32];
 
     printSectionTitle("SERVICE DETAILS");
-    order.itemCount = inputServiceCount();
 
     if (serviceCount <= 0)
     {
@@ -151,6 +116,8 @@ static RepairOrder inputOrderServices(RepairOrder order, Service services[], int
         order.itemCount = 0;
         return order;
     }
+
+    order.itemCount = inputServiceCount();
 
     printBoxTitle("AVAILABLE SERVICES", 64);
     printf("+------------+---------------------------+------------------+\n");
@@ -274,6 +241,22 @@ const char* getStatusText(Status status)
     }
 }
 
+static const char* getStatusColor(Status status)
+{
+    switch (status)
+    {
+        case RECEIVED: return COLOR_GRAY;
+        case UNDER_REPAIRED: return COLOR_YELLOW;
+        case COMPLETE: return COLOR_GREEN;
+        default: return COLOR_RESET;
+    }
+}
+
+static void printStatusValue(Status status)
+{
+    printf("%s%s%s", getStatusColor(status), getStatusText(status), COLOR_RESET);
+}
+
 // update status when creating a order
 RepairOrder updateStatus(RepairOrder order)
 {
@@ -317,76 +300,27 @@ RepairOrder updateStatus(RepairOrder order)
         else
         {
             printError("Status is not reversible. Please try again.");
+
         }
-    }
+
+        if (nextStatus == order.status + 1)
+        {
+            order.status = nextStatus;
+            return order;
+        }
+        else if (nextStatus == order.status)
+        {
+            printInfo("Status unchanged.");
+            return order;
+        }
+        else
+        {
+            printError("Status must move forward one step at a time.");
+        }
+    }   
 }
 
-// add service to the list
-void addService(Service services[], int *serviceCount)
-{
-    Service service;
 
-    if (*serviceCount >= MAX_SERVICES)
-    {
-        printError("Service list is full.");
-        return;
-    }
-
-    generateServiceId(service.serviceId, *serviceCount);
-    printf("[INFO] New service ID: %s\n", service.serviceId);
-
-    printf("Enter service name: ");
-    if (!readLine(service.name, sizeof(service.name)))
-    {
-        strcpy(service.name, "");
-    }
-
-    service.price = inputPrice();
-
-    services[*serviceCount] = service;
-    (*serviceCount)++;
-
-    printSuccess("Service added successfully.");
-}
-
-// update service in the list
-void updateService(Service services[], int serviceCount)
-{
-    char id[10];
-    int index;
-    char priceText[20];
-    
-    printSectionTitle("UPDATE SERVICE");
-    printf("Enter service ID to update: ");
-    if (!readLine(id, sizeof(id)))
-    {
-        printError("Input error.");
-        return;
-    }
-
-    index = findServiceIndexById(services, serviceCount, id);
-
-    if (index == -1)
-    {
-        printError("Service not found.");
-        return;
-    }
-
-    printOrderSummaryRow("Service ID", services[index].serviceId);
-    printOrderSummaryRow("Name", services[index].name);
-    snprintf(priceText,sizeof(priceText), "%d VND", services[index].price);
-    printOrderSummaryRow("Price", priceText);
-
-    printf("Enter new service name: ");
-    if (!readLine(services[index].name, sizeof(services[index].name)))
-    {
-        strcpy(services[index].name, "");
-    }
-
-    services[index].price = inputPrice();
-
-    printSuccess("Service updated successfully.");
-}
 
 // view history of order
 void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer customers[], int customerCount)
@@ -394,6 +328,7 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     char phone[11];
     int i;
     int found = 0;
+    int customerIndex;
 
     (void)customers;
     (void)customerCount;
@@ -405,6 +340,12 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     {
         printError("Input error.");
         return;
+    }
+
+    customerIndex = findCustomerIndexByPhone(customers, customerCount, phone);
+    if (customerIndex != -1)
+    {
+        displayCustomer(customers[customerIndex]);
     }
 
     for (i = 0; i < orderCount; i++)
@@ -575,7 +516,7 @@ void listRepairOrders(RepairOrder orders[], int orderCount)
     } while (cmd != 'q');
 }
 
- void printOrderDivider(void)
+void printOrderDivider(void)
 {
     int i;
 
@@ -597,7 +538,7 @@ void listRepairOrders(RepairOrder orders[], int orderCount)
     printf("+\n");
 }
 
- void printOrderSummaryRow(const char label[], const char value[])
+void printOrderSummaryRow(const char label[], const char value[])
 {
     printf("  %-12s : %s\n", label, value);
 }
@@ -624,7 +565,9 @@ void printRepairOrder(RepairOrder order)
     printOrderSummaryRow("Order ID", order.orderId);
     printOrderSummaryRow("Phone", order.customerPhone);
     printOrderSummaryRow("Created", createdText);
-    printOrderSummaryRow("Status", getStatusText(order.status));
+    printf("  %-12s : ", "Status");
+    printStatusValue(order.status);
+    printf("\n");
     printOrderSummaryRow("Problem", order.symptom);
 
     printf("\n");
