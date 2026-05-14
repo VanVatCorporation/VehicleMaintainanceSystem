@@ -1,9 +1,9 @@
 #include "fileio.h"
+#include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "utils.h"
 
 // Persistence (CSV format)
 
@@ -15,7 +15,8 @@ static void writeCsvField(FILE *file, const char value[]) {
   }
 
   for (const char *current = value; *current != '\0'; current++) {
-    if (*current == ',' || *current == '"' || *current == '\n' || *current == '\r') {
+    if (*current == ',' || *current == '"' || *current == '\n' ||
+        *current == '\r') {
       needsQuotes = 1;
       break;
     }
@@ -36,7 +37,8 @@ static void writeCsvField(FILE *file, const char value[]) {
   fputc('"', file);
 }
 
-static const char *readCsvField(const char *cursor, char output[], size_t size) {
+static const char *readCsvField(const char *cursor, char output[],
+                                size_t size) {
   size_t length = 0;
   int quoted = 0;
 
@@ -81,7 +83,8 @@ static const char *readCsvField(const char *cursor, char output[], size_t size) 
     output[length] = '\0';
   }
 
-  while (*cursor != '\0' && *cursor != ',' && *cursor != '\n' && *cursor != '\r') {
+  while (*cursor != '\0' && *cursor != ',' && *cursor != '\n' &&
+         *cursor != '\r') {
     cursor++;
   }
 
@@ -92,8 +95,10 @@ static const char *readCsvField(const char *cursor, char output[], size_t size) 
   return cursor;
 }
 
-static int readRequiredCsvField(const char **cursor, char output[], size_t size) {
-  if (*cursor == NULL || **cursor == '\0' || **cursor == '\n' || **cursor == '\r') {
+static int readRequiredCsvField(const char **cursor, char output[],
+                                size_t size) {
+  if (*cursor == NULL || **cursor == '\0' || **cursor == '\n' ||
+      **cursor == '\r') {
     return 0;
   }
 
@@ -144,11 +149,16 @@ void loadCustomers(Customer customers[], int *count) {
 
     memset(&parsedCustomer, 0, sizeof(parsedCustomer));
 
-    if (readRequiredCsvField(&cursor, parsedCustomer.customerId, sizeof(parsedCustomer.customerId)) &&
-        readRequiredCsvField(&cursor, parsedCustomer.fullName, sizeof(parsedCustomer.fullName)) &&
-        readRequiredCsvField(&cursor, parsedCustomer.phoneNumber, sizeof(parsedCustomer.phoneNumber)) &&
-        readRequiredCsvField(&cursor, parsedCustomer.carPlate, sizeof(parsedCustomer.carPlate)) &&
-        readRequiredCsvField(&cursor, parsedCustomer.carType, sizeof(parsedCustomer.carType)) &&
+    if (readRequiredCsvField(&cursor, parsedCustomer.customerId,
+                             sizeof(parsedCustomer.customerId)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.fullName,
+                             sizeof(parsedCustomer.fullName)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.phoneNumber,
+                             sizeof(parsedCustomer.phoneNumber)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.carPlate,
+                             sizeof(parsedCustomer.carPlate)) &&
+        readRequiredCsvField(&cursor, parsedCustomer.carType,
+                             sizeof(parsedCustomer.carType)) &&
         readRequiredCsvField(&cursor, orderCountText, sizeof(orderCountText))) {
       parsedCustomer.orderCount = atoi(orderCountText);
       customers[*count] = parsedCustomer;
@@ -173,7 +183,8 @@ void saveRepairOrders(RepairOrder orders[], int count) {
     writeCsvField(file, orders[i].customerPhone);
     fputc(',', file);
     writeCsvField(file, orders[i].symptom);
-    fprintf(file, ",%ld,%d,%d", (long)orders[i].createdDate, orders[i].status, orders[i].itemCount);
+    fprintf(file, ",%ld,%d,%d", (long)orders[i].createdDate, orders[i].status,
+            orders[i].itemCount);
 
     // Nested items: ServiceName,Price
     for (int j = 0; j < orders[i].itemCount; j++) {
@@ -205,9 +216,12 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
 
     memset(&parsedOrder, 0, sizeof(parsedOrder));
 
-    if (!readRequiredCsvField(&cursor, parsedOrder.orderId, sizeof(parsedOrder.orderId)) ||
-        !readRequiredCsvField(&cursor, parsedOrder.customerPhone, sizeof(parsedOrder.customerPhone)) ||
-        !readRequiredCsvField(&cursor, parsedOrder.symptom, sizeof(parsedOrder.symptom)) ||
+    if (!readRequiredCsvField(&cursor, parsedOrder.orderId,
+                              sizeof(parsedOrder.orderId)) ||
+        !readRequiredCsvField(&cursor, parsedOrder.customerPhone,
+                              sizeof(parsedOrder.customerPhone)) ||
+        !readRequiredCsvField(&cursor, parsedOrder.symptom,
+                              sizeof(parsedOrder.symptom)) ||
         !readRequiredCsvField(&cursor, createdText, sizeof(createdText)) ||
         !readRequiredCsvField(&cursor, statusText, sizeof(statusText)) ||
         !readRequiredCsvField(&cursor, itemCountText, sizeof(itemCountText))) {
@@ -228,7 +242,8 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
     for (int j = 0; j < parsedOrder.itemCount; j++) {
       char priceText[16];
 
-      if (!readRequiredCsvField(&cursor, parsedOrder.items[j].name, sizeof(parsedOrder.items[j].name)) ||
+      if (!readRequiredCsvField(&cursor, parsedOrder.items[j].name,
+                                sizeof(parsedOrder.items[j].name)) ||
           !readRequiredCsvField(&cursor, priceText, sizeof(priceText))) {
         parsedOrder.itemCount = j;
         break;
@@ -244,10 +259,65 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
   fclose(file);
 }
 
+void saveServices(Service services[], int count) {
+  FILE *file = fopen(SERVICE_FILE, "w");
+  if (file == NULL) {
+    printf("Error: Could not open %s for writing.\n", SERVICE_FILE);
+    return;
+  }
+
+  for (int i = 0; i < count; i++) {
+    writeCsvField(file, services[i].serviceId);
+    fputc(',', file);
+    writeCsvField(file, services[i].name);
+    fprintf(file, ",%d\n", services[i].price);
+  }
+
+  fclose(file);
+}
+
+void loadServices(Service services[], int *count) {
+  FILE *file = fopen(SERVICE_FILE, "r");
+  if (file == NULL) {
+    *count = 0;
+    return;
+  }
+
+  *count = 0;
+  char line[512];
+  while (fgets(line, sizeof(line), file)) {
+    Service parsedService;
+    const char *cursor = line;
+    char priceText[16];
+
+    if (*count >= MAX_SERVICES) {
+      break;
+    }
+
+    memset(&parsedService, 0, sizeof(parsedService));
+
+    if (readRequiredCsvField(&cursor, parsedService.serviceId,
+                             sizeof(parsedService.serviceId)) &&
+        readRequiredCsvField(&cursor, parsedService.name,
+                             sizeof(parsedService.name)) &&
+        readRequiredCsvField(&cursor, priceText, sizeof(priceText))) {
+      parsedService.price = atoi(priceText);
+
+      if (parsedService.price >= 0) {
+        services[*count] = parsedService;
+        (*count)++;
+      }
+    }
+  }
+
+  fclose(file);
+}
+
 // Invoice Export (.txt format)
 // Code structures are mine, but the bill graphic (fprintf) are AI generated.
 
-static void formatInvoiceCurrency(char output[], size_t size, long long amount) {
+static void formatInvoiceCurrency(char output[], size_t size,
+                                  long long amount) {
   snprintf(output, size, "%lld VND", amount);
 }
 
