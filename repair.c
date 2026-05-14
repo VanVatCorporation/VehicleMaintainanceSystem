@@ -394,9 +394,7 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     char phone[11];
     int i;
     int found = 0;
-
-    (void)customers;
-    (void)customerCount;
+    int customerIndex;
 
     printSectionTitle("REPAIR ORDER HISTORY");
     
@@ -405,6 +403,12 @@ void viewRepairOrderHistory(RepairOrder orders[], int orderCount, Customer custo
     {
         printError("Input error.");
         return;
+    }
+
+    customerIndex = findCustomerIndexByPhone(customers, customerCount, phone);
+    if (customerIndex != -1)
+    {
+        displayCustomer(customers[customerIndex]);
     }
 
     for (i = 0; i < orderCount; i++)
@@ -487,10 +491,12 @@ void filterRepairOrdersByStatus(RepairOrder orders[], int orderCount)
             {
                 if (count >= page * 10 && shown < 10)
                 {
-                    printf(" %-2d. %-10s | %-10s\n",
+                    printf(" %-2d. %-10s | %-10s | ",
                            i + 1,
                            orders[i].orderId,
                            orders[i].customerPhone);
+                    printStatusValue(orders[i].status);
+                    printf("\n");
                     shown++;
                 }
 
@@ -549,11 +555,12 @@ void listRepairOrders(RepairOrder orders[], int orderCount)
 
         for (i = start; i < end; i++)
         {
-            printf("%d. %s | %s | %s\n",
+            printf("%d. %s | %s | ",
                    i + 1,
                    orders[i].orderId,
-                   orders[i].customerPhone,
-                   getStatusText(orders[i].status));
+                   orders[i].customerPhone);
+            printStatusValue(orders[i].status);
+            printf("\n");
         }
 
         printf("\n[n] Next | [p] Prev | [q] Quit: ");
@@ -624,7 +631,9 @@ void printRepairOrder(RepairOrder order)
     printOrderSummaryRow("Order ID", order.orderId);
     printOrderSummaryRow("Phone", order.customerPhone);
     printOrderSummaryRow("Created", createdText);
-    printOrderSummaryRow("Status", getStatusText(order.status));
+    printf("  %-12s : ", "Status");
+    printStatusValue(order.status);
+    printf("\n");
     printOrderSummaryRow("Problem", order.symptom);
 
     printf("\n");
