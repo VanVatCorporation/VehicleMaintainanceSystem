@@ -6,6 +6,7 @@
 #include "repair.h"
 #include "fileio.h"
 #include "utils.h"
+#include "service.h"
 
 #define MAX_REPAIR_ORDERS 1000
 #define APP_HEADER_WIDTH 68
@@ -33,7 +34,8 @@ static void printMainMenu(void)
     printSectionTitle("MAIN MENU");
     printMenuOption(1, "Customer management");
     printMenuOption(2, "Repair order management");
-    printMenuOption(3, "Save and exit");
+    printMenuOption(3, "Service Management");
+    printMenuOption(4, "Save and exit");
     printf("\nSelect option: ");
 }
 
@@ -53,11 +55,19 @@ static void printRepairMenu(void)
     printSectionTitle("REPAIR ORDER MANAGEMENT");
     printMenuOption(1, "Create repair order");
     printMenuOption(2, "View or update order status");
-    printMenuOption(3, "Add service");
-    printMenuOption(4, "Update service");
-    printMenuOption(5, "List all repair orders");
-    printMenuOption(6, "Filter repair orders by status");
-    printMenuOption(7, "View repair order history");
+    printMenuOption(3, "List all repair orders");
+    printMenuOption(4, "Filter repair orders by status");
+    printMenuOption(5, "View repair order history");
+    printMenuBack();
+    printf("\nSelect option: ");
+}
+
+static void printServiceManagement(void)
+{
+    printSectionTitle("SERVICE MANAGEMENT");
+    printMenuOption(1, "Add service");
+    printMenuOption(2, "Update service");
+    printMenuOption(3, "List of service");
     printMenuBack();
     printf("\nSelect option: ");
 }
@@ -190,19 +200,45 @@ static void openRepairMenu(void)
                 viewOrUpdateOrderStatus();
                 break;
             case 3:
-                addService(services, &serviceCount);
-                break;
-            case 4:
-                updateService(services, serviceCount);
-                break;
-            case 5:
                 listRepairOrders(orders, orderCount);
                 break;
-            case 6:
+            case 4:
                 filterRepairOrdersByStatus(orders, orderCount);
                 break;
-            case 7:
+            case 5:
                 viewRepairOrderHistory(orders, orderCount, customers, customerCount);
+                break;
+            case 0:
+                return;
+            default:
+                printError("Please choose an option from the menu.");
+        }
+    }
+}
+
+static void openServiceManagement(void)
+{
+    int subChoice;
+
+    while(1)
+    {
+        printServiceManagement();
+
+        if (!readInt(&subChoice))
+        {
+            printError("Please enter a valid number.");
+            continue;
+        }
+        switch(subChoice)
+        {
+            case 1:
+                addService(services, &serviceCount);
+                break;
+            case 2:
+                updateService(services, serviceCount);
+                break;
+            case 3:
+                listServices(services, serviceCount);
                 break;
             case 0:
                 return;
@@ -266,6 +302,9 @@ int main()
                 openRepairMenu();
                 break;
             case 3:
+                openServiceManagement();
+                break;
+            case 4:
                 handleExit(0); // Normal exit
                 break;
             default:
