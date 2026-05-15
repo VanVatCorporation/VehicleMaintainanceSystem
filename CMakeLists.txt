@@ -16,6 +16,7 @@ set(SOURCES
     fileio.c 
     utils.c 
     report.c
+    service.c
 )
 
 
