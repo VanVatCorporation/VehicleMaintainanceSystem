@@ -1,126 +1,136 @@
 # Vehicle Repair Shop Management System
 
-Chương trình quản lý tiệm sửa xe chạy trên terminal, viết bằng ngôn ngữ C. Project mô phỏng quy trình làm việc của một tiệm sửa xe nhỏ: quản lý khách hàng, tạo phiếu sửa chữa, quản lý dịch vụ, cập nhật trạng thái sửa xe, lưu dữ liệu vào file và xuất hóa đơn.
+A terminal-based repair shop management system written in C. The application is designed for a small vehicle or motorbike repair shop that needs to manage customers, repair orders, service catalogs, order status, invoices, and basic business reports without using a database or external dependencies.
 
-Project được xây dựng theo yêu cầu CLB F-Code - Train-C: không dùng giao diện đồ họa, không dùng cơ sở dữ liệu, không dùng thư viện ngoài C chuẩn.
+This project was built as a CLB F-Code Train-C assignment and follows the required constraints: standard C, file-based persistence, modular source files, and a console-only user interface.
 
-## Trạng thái project
+## Project Status
 
-- Đã hoàn thiện các chức năng bắt buộc.
-- Có thêm chức năng nâng cao: thống kê doanh thu, thống kê dịch vụ bán chạy, xuất hóa đơn `.txt`, giao diện console có màu ANSI.
-- Dữ liệu được tự động lưu sau các thao tác thay đổi để hạn chế mất dữ liệu khi thoát chương trình.
+- Core required features are implemented.
+- Advanced features are included: daily revenue report, popular service report, invoice export, and colored console output.
+- Data is loaded on startup and automatically saved after data-changing operations.
+- The codebase is split into focused modules for customers, repair orders, file I/O, reports, and shared utilities.
 
-## Tính năng chính
+## Key Features
 
-### Quản lý khách hàng
+### Customer Management
 
-- Thêm khách hàng mới với họ tên, số điện thoại, biển số xe và loại xe.
-- Số điện thoại là định danh duy nhất, không cho phép trùng.
-- Cập nhật thông tin khách hàng: họ tên, biển số xe, loại xe.
-- Không cho sửa số điện thoại vì đây là khóa định danh khách hàng.
-- Tìm kiếm khách hàng theo số điện thoại.
-- Tìm kiếm khách hàng theo biển số xe.
-- Xem danh sách toàn bộ khách hàng.
+- Add a new customer with full name, phone number, vehicle plate, and vehicle type.
+- Use phone number as the unique customer identifier.
+- Prevent duplicate phone numbers and duplicate vehicle plates.
+- Update customer name, vehicle plate, and vehicle type.
+- Keep phone number immutable to preserve customer identity.
+- Search customers by phone number.
+- Search customers by vehicle plate.
+- List all customers.
 
-### Quản lý phiếu sửa chữa
+### Repair Order Management
 
-- Tạo phiếu sửa chữa mới cho khách hàng đã tồn tại.
-- Sinh mã phiếu tự động theo dạng `RO000001`.
-- Nhập triệu chứng xe.
-- Chọn dịch vụ từ danh mục dịch vụ.
-- Tối đa 10 dịch vụ trong một phiếu sửa chữa.
-- Tự động tính tổng tiền từ các dịch vụ đã chọn.
-- Xem chi tiết phiếu sửa chữa kèm thông tin khách hàng.
-- Xem danh sách toàn bộ phiếu sửa chữa.
-- Lọc phiếu sửa chữa theo trạng thái.
-- Xem lịch sử sửa chữa của một khách hàng theo số điện thoại.
-- Tìm kiếm phiếu theo mã phiếu hoặc biển số xe.
+- Create repair orders with automatically generated IDs such as `RO000001`.
+- Attach repair orders to customers by phone number.
+- Record vehicle symptoms or repair notes.
+- Select repair services from the service catalog.
+- Support up to 10 service items per repair order.
+- Automatically calculate the total amount for each repair order.
+- View detailed repair order information with customer data.
+- List all repair orders.
+- Filter repair orders by status.
+- View a customer's repair history by phone number.
+- Search repair orders by order ID or vehicle plate.
 
-### Quản lý trạng thái
+### Service Catalog
 
-Phiếu sửa chữa có 3 trạng thái:
+- Add new repair services.
+- Generate service IDs such as `SV000001`.
+- Update service name and price.
+- List all available services.
+- Persist the service catalog to a separate CSV file.
 
-1. `Received` - đã tiếp nhận.
-2. `Under repaired` - đang sửa.
-3. `Complete` - hoàn thành.
+### Status Workflow
 
-Chương trình chỉ cho phép cập nhật trạng thái theo đúng chiều:
+Each repair order follows a strict forward-only workflow:
 
 ```text
 Received -> Under repaired -> Complete
 ```
 
-Không cho phép nhảy trạng thái hoặc đảo ngược trạng thái.
+The application prevents invalid transitions such as skipping a step or moving backward from `Complete` to a previous status.
 
-### Quản lý dịch vụ
+### Reports and Invoices
 
-- Thêm dịch vụ mới vào danh mục.
-- Sinh mã dịch vụ tự động theo dạng `SV000001`.
-- Cập nhật tên dịch vụ và đơn giá.
-- Xem danh sách toàn bộ dịch vụ.
-- Dịch vụ được lưu vào file riêng để lần chạy sau vẫn sử dụng lại được.
+- Calculate daily revenue from completed repair orders.
+- Show the most frequently used services.
+- Automatically export a `.txt` invoice when an order is marked as `Complete`.
+- Include customer information, vehicle information, symptoms, service items, and total amount in the invoice.
 
-### Báo cáo và hóa đơn
+### Console User Interface
 
-- Thống kê doanh thu trong ngày.
-- Thống kê dịch vụ được sử dụng nhiều nhất.
-- Tự động xuất hóa đơn `.txt` khi phiếu được cập nhật sang trạng thái `Complete`.
-- Hóa đơn gồm thời gian, mã phiếu, thông tin khách hàng, thông tin xe, triệu chứng, danh sách dịch vụ và tổng tiền.
+- Menu-driven terminal interface.
+- Colored status and feedback messages using ANSI escape codes.
+- Fixed-width tables for customers, services, repair orders, and invoices.
+- UTF-8-aware text padding to reduce table misalignment with Vietnamese text.
 
-### Giao diện console
+## Technical Highlights
 
-- Menu được chia theo từng nhóm chức năng.
-- Bảng hiển thị được căn cột cố định để tránh lệch layout khi có tiếng Việt hoặc số tiền dài.
-- Thông báo thành công, lỗi và thông tin được in màu bằng ANSI escape code.
-- Trạng thái phiếu có màu riêng để dễ quan sát khi demo.
+- Written in C with no third-party libraries.
+- Uses static arrays as required by the assignment.
+- Supports up to 10,000 customers.
+- Supports up to 50,000 repair orders.
+- Supports up to 100 services.
+- Uses nested structs: `RepairOrder` contains an array of `RepairItem`.
+- Uses CSV files for persistence.
+- CSV writer and parser support quoted fields, commas, and escaped double quotes.
+- Automatically saves customer, repair order, and service data after important mutations.
+- Handles `Ctrl+C` / termination signals by saving data before exit.
 
-## Cấu trúc project
+## Project Structure
 
-| File / thư mục | Vai trò |
+| Path | Responsibility |
 | --- | --- |
-| `main.c` | Khởi động chương trình, load dữ liệu, hiển thị menu chính và điều hướng chức năng. |
-| `customer.h` / `customer.c` | Khai báo cấu trúc khách hàng, thêm/sửa/tìm kiếm/hiển thị khách hàng. |
-| `customer_validation.c` | Validate họ tên, số điện thoại và biển số xe. |
-| `repair.h` / `repair.c` | Quản lý phiếu sửa chữa, dịch vụ, trạng thái và bảng hiển thị phiếu. |
-| `fileio.h` / `fileio.c` | Đọc/ghi dữ liệu CSV và xuất hóa đơn `.txt`. |
-| `report.h` / `report.c` | Thống kê doanh thu, thống kê dịch vụ phổ biến và liệt kê khách hàng. |
-| `utils.h` / `utils.c` | Hàm dùng chung: đọc input an toàn, trim chuỗi, in menu, in bảng, in màu. |
-| `data/` | Thư mục lưu dữ liệu khi chương trình chạy. |
-| `build.bat` | Script build nhanh trên Windows bằng GCC. |
-| `Makefile` | Build project bằng `make`. |
-| `CMakeLists.txt` | Build project bằng CMake. |
+| `main.c` | Application entry point, menu flow, startup loading, auto-save coordination, and signal handling. |
+| `customer.h` / `customer.c` | Customer data structure, customer CRUD operations, search, and display logic. |
+| `customer_validation.c` | Validation for full name, phone number, and vehicle plate. |
+| `repair.h` / `repair.c` | Repair order structure, service catalog, order status workflow, totals, and order UI. |
+| `fileio.h` / `fileio.c` | CSV load/save logic and invoice export. |
+| `report.h` / `report.c` | Daily revenue, popular service statistics, and customer listing support. |
+| `utils.h` / `utils.c` | Shared input handling, string trimming, table padding, menus, and colored messages. |
+| `data/` | Runtime data directory for CSV files. |
+| `build.bat` | Windows build script using GCC. |
+| `Makefile` | Make-based build configuration. |
+| `CMakeLists.txt` | CMake build configuration. |
 
-## Dữ liệu lưu trữ
+## Data Persistence
 
-Chương trình lưu dữ liệu dưới dạng CSV:
+The application stores runtime data in CSV files:
 
-| File | Nội dung |
+| File | Description |
 | --- | --- |
-| `data/customers.csv` | Danh sách khách hàng. |
-| `data/repair_orders.csv` | Danh sách phiếu sửa chữa. |
-| `data/services.csv` | Danh mục dịch vụ. |
-| `invoice_ROxxxxxx.txt` | Hóa đơn được xuất khi phiếu hoàn thành. |
+| `data/customers.csv` | Customer records. |
+| `data/repair_orders.csv` | Repair order records and nested service items. |
+| `data/services.csv` | Service catalog records. |
+| `invoice_ROxxxxxx.txt` | Exported invoice for a completed order. |
 
-Các file dữ liệu được load lại khi khởi động chương trình. Sau mỗi thao tác thêm/sửa/cập nhật quan trọng, chương trình tự động ghi lại dữ liệu xuống file.
+Data is loaded when the program starts. After operations that change data, the application saves the latest customer, repair order, and service state back to disk.
 
-## Yêu cầu môi trường
+## Requirements
 
-- GCC hoặc MinGW-w64 nếu chạy trên Windows.
-- Không cần cài thư viện ngoài.
-- CMake hoặc Make là tùy chọn, chỉ dùng nếu muốn build theo các công cụ đó.
+- GCC or MinGW-w64 on Windows.
+- A terminal that supports basic ANSI colors for the best UI experience.
+- `make` or CMake is optional.
+- No database server, network connection, or external C library is required.
 
-## Cách build và chạy
+## Build and Run
 
 ### Windows
 
-Build bằng script có sẵn:
+Using the provided build script:
 
 ```powershell
 .\build.bat
 .\motorbike_shop.exe
 ```
 
-Hoặc build thủ công bằng GCC:
+Manual GCC build:
 
 ```powershell
 gcc -Wall -Wextra -g -o motorbike_shop.exe main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c
@@ -129,14 +139,14 @@ gcc -Wall -Wextra -g -o motorbike_shop.exe main.c customer.c customer_validation
 
 ### Linux / macOS
 
-Build bằng Makefile:
+Using Make:
 
 ```bash
 make
 ./motorbike_shop
 ```
 
-Hoặc build thủ công:
+Manual GCC build:
 
 ```bash
 gcc -Wall -Wextra -g -o motorbike_shop main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c
@@ -150,52 +160,47 @@ cmake -S . -B build
 cmake --build build
 ```
 
-Sau khi build xong, chạy file thực thi trong thư mục `build`.
+Run the generated executable from the `build` directory.
 
-## Luồng demo gợi ý
+## Suggested Demo Flow
 
-1. Mở chương trình và kiểm tra số lượng khách hàng, phiếu sửa chữa, dịch vụ đã load.
-2. Vào `Repair order management` -> `Add service` để thêm một vài dịch vụ mẫu.
-3. Vào `Customer management` -> `Add customer` để thêm khách hàng mới.
-4. Tạo phiếu sửa chữa cho khách hàng vừa thêm.
-5. Chọn dịch vụ từ danh mục và kiểm tra tổng tiền tự động.
-6. Thử cập nhật trạng thái sai thứ tự để thấy chương trình chặn lỗi.
-7. Cập nhật đúng thứ tự đến `Complete`.
-8. Kiểm tra hóa đơn `.txt` được xuất tự động.
-9. Xem lịch sử sửa chữa theo số điện thoại.
-10. Chạy báo cáo doanh thu và dịch vụ phổ biến.
+1. Start the application and verify that existing customers, repair orders, and services are loaded.
+2. Add a few services from `Repair order management -> Add service`.
+3. Add a customer from `Customer management -> Add customer`.
+4. Create a repair order for that customer.
+5. Select services from the catalog and verify the calculated total.
+6. Try an invalid status transition to confirm that the workflow is protected.
+7. Update the status in the valid order until it reaches `Complete`.
+8. Check the generated invoice file.
+9. View repair history by phone number.
+10. Run daily revenue and popular service reports.
 
-## Các rule validate quan trọng
+## Validation and Business Rules
 
-- Số điện thoại phải có đúng 10 chữ số và bắt đầu bằng `0`.
-- Số điện thoại không được trùng giữa các khách hàng.
-- Họ tên không được rỗng và không được chứa chữ số.
-- Biển số xe được chuẩn hóa trước khi lưu, ví dụ `30A-123.45` và `30a 12345` sẽ được đưa về cùng một dạng để so sánh.
-- Biển số xe không được trùng giữa các khách hàng.
-- Giá dịch vụ không được âm.
-- Không thể tạo phiếu sửa chữa nếu chưa có dịch vụ trong danh mục.
-- Không thể cập nhật trạng thái phiếu ngược chiều hoặc nhảy cóc.
+- Phone number must contain exactly 10 digits.
+- Phone number must start with `0`.
+- Phone number must be unique.
+- Customer full name cannot be empty or contain digits.
+- Vehicle plate is normalized before validation and comparison.
+- Vehicle plate must be unique.
+- Service price cannot be negative.
+- A repair order cannot be created without at least one service item.
+- Repair order status can only move forward one step at a time.
+- Completed orders are used for revenue and popular service reports.
 
-## Ghi chú kỹ thuật
+## Quality Checklist
 
-- Project dùng mảng tĩnh theo yêu cầu môn học: tối đa 10.000 khách hàng và 50.000 phiếu sửa chữa.
-- `RepairOrder` chứa mảng `RepairItem`, đúng yêu cầu dùng struct lồng nhau.
-- CSV được xử lý có hỗ trợ dấu phẩy và dấu nháy kép trong dữ liệu text.
-- Các hàm in bảng dùng logic tính độ rộng UTF-8 để hạn chế lệch cột khi có tiếng Việt.
-- `main.c` chỉ giữ vai trò điều hướng chính; logic khách hàng, phiếu sửa, file và báo cáo được tách sang module riêng.
-
-## Checklist trước khi nộp
-
-- Build không warning nghiêm trọng với `gcc -Wall -Wextra`.
-- Chạy được chương trình từ terminal.
-- Thêm/sửa/tìm kiếm khách hàng hoạt động đúng.
-- Chặn trùng số điện thoại và trùng biển số.
-- Tạo phiếu sửa chữa và tính tổng tiền đúng.
-- Cập nhật trạng thái đúng quy trình.
-- Lưu file và load lại dữ liệu sau khi mở chương trình.
-- Xuất hóa đơn khi phiếu hoàn thành.
-- Báo cáo doanh thu và dịch vụ phổ biến hoạt động.
+- The program builds with GCC using `-Wall -Wextra`.
+- The application runs entirely in the terminal.
+- Customer add, update, search, and list flows work correctly.
+- Duplicate phone numbers and duplicate vehicle plates are rejected.
+- Repair orders calculate totals correctly.
+- Status transitions follow the required workflow.
+- Data is saved and loaded through files.
+- Invoices are exported when orders are completed.
+- Reports work with completed orders.
+- Console tables remain aligned with long numbers and UTF-8 text.
 
 ## License
 
-Project sử dụng license trong file `LICENSE`.
+This project is distributed under the license included in `LICENSE`.
