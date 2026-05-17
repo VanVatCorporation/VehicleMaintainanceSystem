@@ -6,6 +6,7 @@
 #include "report.h"
 #include "repair.h"
 #include "utils.h"
+#include "service.h"
 
 long long calculateDailyRevenue(time_t date, RepairOrder orders[], int orderCount) {
     long long totalRevenue = 0;
@@ -96,22 +97,45 @@ void getPopularServices(RepairOrder orders[], int orderCount) {
         }
     }
 
-    printf("Popular Services:\n");
+    printSectionTitle("POPULAR SERVICES");
+
     if (serviceCount == 0)
     {
-        printf("- No service data available.\n");
+        printError("No service data available.");
         return;
     }
 
+
+    printf("\n");
+    printPaddedText("No", 4, 1);
+    printf(" ");
+    printPaddedText("Service", 40, 0);
+    printf(" ");
+    printPaddedText("Count", 6, 1);
+    printf("\n");
+    for (int i = 0; i < 4 + 1 + 40 + 1 + 6; i++) printf("-");
+    printf("\n");
+
     for (int i = 0; i < serviceCount; i++)
     {
-        printf("- %s: %d\n", serviceCounts[i].serviceName, serviceCounts[i].count);
+        char noText[8];
+        snprintf(noText, sizeof(noText), "%d", i + 1);
+        char countText[16];
+        snprintf(countText, sizeof(countText), "%d", serviceCounts[i].count);
+
+        printPaddedText(noText, 4, 1);
+        printf(" ");
+        printPaddedText(serviceCounts[i].serviceName, 40, 0);
+        printf(" ");
+        printPaddedText(countText, 6, 1);
+        printf("\n");
     }
 }
 
 void listAllCustomers(Customer customers[], int customerCount)
 {
-    printf("Customer List:\n");
+    printSectionTitle("CUSTOMER LIST");
+
     if (customerCount == 0)
     {
         printError("No customers available.");
@@ -122,4 +146,20 @@ void listAllCustomers(Customer customers[], int customerCount)
     {
         displayCustomer(customers[i]);
     }
+}
+
+void displayDailyRevenue(RepairOrder orders[], int orderCount)
+{
+    time_t t;
+
+    if (!promptDateToTime(&t)) {
+        printInfo("Daily revenue cancelled.");
+        return;
+    }
+
+    printSectionTitle("DAILY REVENUE");
+    long long revenue = calculateDailyRevenue(t, orders, orderCount);
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%lld VND", revenue);
+    printOrderSummaryRow("Revenue", buf);
 }

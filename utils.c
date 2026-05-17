@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "utils.h"
+#include <time.h>
 
 #define INPUT_LENGTH 100
 #define DEFAULT_UI_WIDTH 64
@@ -274,4 +275,40 @@ int readInt(int *value)
     }
 
     return sscanf(input, "%d %c", value, &extra) == 1;
+}
+
+int promptDateToTime(time_t *out)
+{
+    char dateInput[32];
+
+    while (1) {
+        printf("Enter date (dd/mm/yyyy) or 0 to cancel: ");
+        if (!readLine(dateInput, sizeof(dateInput))) {
+            return 0; /* treat EOF as cancel */
+        }
+
+        if (strcmp(dateInput, "0") == 0 || dateInput[0] == '\0') {
+            return 0; /* cancelled */
+        }
+
+        int d, m, y;
+        if (sscanf(dateInput, "%d/%d/%d", &d, &m, &y) != 3) {
+            printError("Invalid date format. Use dd/mm/yyyy or 0 to cancel.");
+            continue;
+        }
+
+        struct tm tmDate = {0};
+        tmDate.tm_mday = d;
+        tmDate.tm_mon = m - 1;
+        tmDate.tm_year = y - 1900;
+
+        time_t t = mktime(&tmDate);
+        if (t == (time_t)-1) {
+            printError("Invalid date. Try again or enter 0 to cancel.");
+            continue;
+        }
+
+        *out = t;
+        return 1;
+    }
 }

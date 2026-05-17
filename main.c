@@ -7,6 +7,8 @@
 #include "fileio.h"
 #include "utils.h"
 #include "service.h"
+#include "report.h"
+#include <time.h>
 
 #define MAX_REPAIR_ORDERS 1000
 #define APP_HEADER_WIDTH 68
@@ -46,6 +48,7 @@ static void printCustomerMenu(void)
     printMenuOption(2, "Update customer");
     printMenuOption(3, "Search by phone");
     printMenuOption(4, "Search by car plate");
+    printMenuOption(5, "List all customers");
     printMenuBack();
     printf("\nSelect option: ");
 }
@@ -68,6 +71,8 @@ static void printServiceManagement(void)
     printMenuOption(1, "Add service");
     printMenuOption(2, "Update service");
     printMenuOption(3, "List of service");
+    printMenuOption(4, "Popular services");
+    printMenuOption(5, "Daily revenue");
     printMenuBack();
     printf("\nSelect option: ");
 }
@@ -99,6 +104,9 @@ static void openCustomerMenu(void)
                 break;
             case 4:
                 searchCustomerByPlate(customers, customerCount);
+                break;
+            case 5:
+                listAllCustomers(customers, customerCount);
                 break;
             case 0:
                 return;
@@ -239,6 +247,12 @@ static void openServiceManagement(void)
                 break;
             case 3:
                 listServices(services, serviceCount);
+                break;
+            case 4:
+                getPopularServices(orders, orderCount);
+                break;
+            case 5:
+                displayDailyRevenue(orders, orderCount);
                 break;
             case 0:
                 return;
