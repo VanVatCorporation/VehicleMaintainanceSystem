@@ -15,6 +15,7 @@
                 "fileio.c",
                 "utils.c",
                 "report.c",
+                "service.c",
                 "-o",
                 "${workspaceFolder}\\motorbike_shop.exe"
             ],

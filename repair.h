@@ -6,7 +6,7 @@
 #include "service.h"
 
 #define MAX_ITEMS 10
-#define MAX_SERVICES 100
+#define MAX_REPAIR_ORDERS 50000
 
 // repair status
 typedef enum {

@@ -160,6 +160,8 @@ void loadCustomers(Customer customers[], int *count) {
         readRequiredCsvField(&cursor, parsedCustomer.carType,
                              sizeof(parsedCustomer.carType)) &&
         readRequiredCsvField(&cursor, orderCountText, sizeof(orderCountText))) {
+      repairTextEncoding(parsedCustomer.fullName, sizeof(parsedCustomer.fullName));
+      repairTextEncoding(parsedCustomer.carType, sizeof(parsedCustomer.carType));
       parsedCustomer.orderCount = atoi(orderCountText);
       customers[*count] = parsedCustomer;
       (*count)++;
@@ -208,6 +210,10 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
   *count = 0;
   char line[1024];
   while (fgets(line, sizeof(line), file)) {
+    if (*count >= MAX_REPAIR_ORDERS) {
+      break;
+    }
+
     RepairOrder parsedOrder;
     const char *cursor = line;
     char createdText[32];
@@ -230,6 +236,11 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
 
     parsedOrder.createdDate = (time_t)atol(createdText);
     parsedOrder.status = (Status)atoi(statusText);
+    if (parsedOrder.status < RECEIVED || parsedOrder.status > COMPLETE) {
+      parsedOrder.status = RECEIVED;
+    }
+    repairTextEncoding(parsedOrder.symptom, sizeof(parsedOrder.symptom));
+
     parsedOrder.itemCount = atoi(itemCountText);
 
     if (parsedOrder.itemCount < 0) {
@@ -250,6 +261,7 @@ void loadRepairOrders(RepairOrder orders[], int *count) {
       }
 
       parsedOrder.items[j].price = atoi(priceText);
+      repairTextEncoding(parsedOrder.items[j].name, sizeof(parsedOrder.items[j].name));
     }
 
     orders[*count] = parsedOrder;
@@ -301,6 +313,7 @@ void loadServices(Service services[], int *count) {
         readRequiredCsvField(&cursor, parsedService.name,
                              sizeof(parsedService.name)) &&
         readRequiredCsvField(&cursor, priceText, sizeof(priceText))) {
+      repairTextEncoding(parsedService.name, sizeof(parsedService.name));
       parsedService.price = atoi(priceText);
 
       if (parsedService.price >= 0) {
@@ -322,15 +335,31 @@ static void formatInvoiceCurrency(char output[], size_t size,
 }
 
 void exportInvoice(RepairOrder order, Customer customer) {
-  char filename[100];
+  char filename[160];
+  char fallbackFilename[80];
+  char timestamp[32];
   char priceText[32];
   long long total = 0;
-  snprintf(filename, sizeof(filename), "invoice_%s.txt", order.orderId);
+  time_t now = time(NULL);
+  char dateText[32];
+  struct tm *nowInfo = localtime(&now);
+
+  if (nowInfo == NULL ||
+      strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", nowInfo) == 0) {
+    strcpy(timestamp, "unknown_time");
+  }
+
+  snprintf(filename, sizeof(filename), "output/invoice_%s_%s.txt", order.orderId, timestamp);
+  snprintf(fallbackFilename, sizeof(fallbackFilename), "invoice_%s_%s.txt", order.orderId, timestamp);
 
   FILE *file = fopen(filename, "w");
   if (file == NULL) {
-    printf("Error: Could not create invoice file %s.\n", filename);
-    return;
+    strcpy(filename, fallbackFilename);
+    file = fopen(filename, "w");
+    if (file == NULL) {
+      printf("Error: Could not create invoice file %s.\n", filename);
+      return;
+    }
   }
 
   fprintf(file, "==========================================\n");
@@ -338,10 +367,6 @@ void exportInvoice(RepairOrder order, Customer customer) {
   fprintf(file, "==========================================\n");
 
   // Timestamp
-  time_t now = time(NULL);
-  char dateText[32];
-  struct tm *nowInfo = localtime(&now);
-
   if (nowInfo == NULL ||
       strftime(dateText, sizeof(dateText), "%d/%m/%Y %H:%M:%S", nowInfo) == 0) {
     strcpy(dateText, "Unknown");

@@ -10,7 +10,6 @@
 #include "report.h"
 #include <time.h>
 
-#define MAX_REPAIR_ORDERS 1000
 #define APP_HEADER_WIDTH 68
 
 // Global variables for signal handler access
@@ -23,12 +22,40 @@ int orderCount = 0;
 Service services[MAX_SERVICES];
 int serviceCount = 0;
 
+static void saveAllData(void)
+{
+    saveCustomers(customers, customerCount);
+    saveRepairOrders(orders, orderCount);
+    saveServices(services, serviceCount);
+}
+
+static void rebuildCustomerOrderCounts(void)
+{
+    int i;
+    int index;
+
+    for (i = 0; i < customerCount; i++)
+    {
+        customers[i].orderCount = 0;
+    }
+
+    for (i = 0; i < orderCount; i++)
+    {
+        index = findCustomerIndexByPhone(customers, customerCount, orders[i].customerPhone);
+        if (index != -1)
+        {
+            customers[index].orderCount++;
+        }
+    }
+}
+
 static void printAppHeader(void)
 {
     printBoxTitle("MOTORBIKE REPAIR SHOP MANAGEMENT", APP_HEADER_WIDTH);
     printf("  Customers loaded     : %d\n", customerCount);
     printf("  Repair orders loaded : %d\n", orderCount);
-    printInfo("Data will be saved automatically when you exit.");
+    printf("  Services loaded      : %d\n", serviceCount);
+    printInfo("Data is saved automatically after each change.");
 }
 
 static void printMainMenu(void)
@@ -61,6 +88,7 @@ static void printRepairMenu(void)
     printMenuOption(3, "List all repair orders");
     printMenuOption(4, "Filter repair orders by status");
     printMenuOption(5, "View repair order history");
+    printMenuOption(6, "Search order by ID or car plate");
     printMenuBack();
     printf("\nSelect option: ");
 }
@@ -95,9 +123,12 @@ static void openCustomerMenu(void)
         {
             case 1:
                 addCustomer(customers, &customerCount);
+                saveAllData();
                 break;
             case 2:
                 updateCustomer(customers, &customerCount);
+                rebuildCustomerOrderCounts();
+                saveAllData();
                 break;
             case 3:
                 searchCustomerByPhone(customers, customerCount);
@@ -114,6 +145,22 @@ static void openCustomerMenu(void)
                 printError("Please choose an option from the menu.");
         }
     }
+}
+
+static void printRepairOrderWithCustomer(RepairOrder order)
+{
+    int customerIndex = findCustomerIndexByPhone(customers, customerCount, order.customerPhone);
+
+    if (customerIndex != -1)
+    {
+        displayCustomer(customers[customerIndex]);
+    }
+    else
+    {
+        printInfo("Customer profile is not available for this order.");
+    }
+
+    printRepairOrder(order);
 }
 
 static void viewOrUpdateOrderStatus(void)
@@ -144,7 +191,7 @@ static void viewOrUpdateOrderStatus(void)
         return;
     }
 
-    printRepairOrder(orders[found]);
+    printRepairOrderWithCustomer(orders[found]);
     Status previousStatus = orders[found].status;
     orders[found] = updateStatus(orders[found]);
 
@@ -155,6 +202,7 @@ static void viewOrUpdateOrderStatus(void)
     else
     {
         printSuccess("Order status updated.");
+        saveAllData();
     }
 
     // Mission 14: Export invoice if complete
@@ -166,6 +214,88 @@ static void viewOrUpdateOrderStatus(void)
         {
             exportInvoice(orders[found], customers[cIndex]);
         }
+    }
+}
+
+static void searchRepairOrder(void)
+{
+    int choice;
+    char input[100];
+    int found = 0;
+
+    printSectionTitle("SEARCH REPAIR ORDER");
+    printMenuOption(1, "By order ID");
+    printMenuOption(2, "By car plate");
+    printf("\nSelect option: ");
+
+    if (!readInt(&choice))
+    {
+        printError("Invalid choice.");
+        return;
+    }
+
+    if (choice == 1)
+    {
+        printf("Enter order ID: ");
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error.");
+            return;
+        }
+
+        for (int i = 0; i < orderCount; i++)
+        {
+            if (strcmp(orders[i].orderId, input) == 0)
+            {
+                printRepairOrderWithCustomer(orders[i]);
+                found = 1;
+                break;
+            }
+        }
+    }
+    else if (choice == 2)
+    {
+        int customerIndex;
+
+        printf("Enter car plate: ");
+        if (!readLine(input, sizeof(input)))
+        {
+            printError("Input error.");
+            return;
+        }
+
+        normalizeCarPlate(input);
+        if (!isValidCarPlate(input))
+        {
+            printError("Invalid car plate.");
+            return;
+        }
+
+        customerIndex = findCustomerIndexByPlate(customers, customerCount, input);
+        if (customerIndex == -1)
+        {
+            printError("No customer found for this car plate.");
+            return;
+        }
+
+        for (int i = 0; i < orderCount; i++)
+        {
+            if (strcmp(orders[i].customerPhone, customers[customerIndex].phoneNumber) == 0)
+            {
+                printRepairOrderWithCustomer(orders[i]);
+                found = 1;
+            }
+        }
+    }
+    else
+    {
+        printError("Invalid choice.");
+        return;
+    }
+
+    if (!found)
+    {
+        printError("Repair order not found.");
     }
 }
 
@@ -191,8 +321,23 @@ static void openRepairMenu(void)
                     printError("Repair order list is full.");
                     break;
                 }
+                if (customerCount <= 0)
+                {
+                    printError("Please add at least one customer before creating a repair order.");
+                    break;
+                }
+                if (serviceCount <= 0)
+                {
+                    printError("Please add at least one service before creating a repair order.");
+                    break;
+                }
 
                 orders[orderCount] = createRepairOrder(orderCount, customers, customerCount, services, serviceCount);
+                if (orders[orderCount].itemCount <= 0)
+                {
+                    printError("Repair order was not created because it has no services.");
+                    break;
+                }
                 {
                     int customerIndex = findCustomerIndexByPhone(customers, customerCount, orders[orderCount].customerPhone);
 
@@ -203,6 +348,7 @@ static void openRepairMenu(void)
                 }
                 orderCount++;
                 printSuccess("Repair order created.");
+                saveAllData();
                 break;
             case 2:
                 viewOrUpdateOrderStatus();
@@ -215,6 +361,9 @@ static void openRepairMenu(void)
                 break;
             case 5:
                 viewRepairOrderHistory(orders, orderCount, customers, customerCount);
+                break;
+            case 6:
+                searchRepairOrder();
                 break;
             case 0:
                 return;
@@ -241,9 +390,11 @@ static void openServiceManagement(void)
         {
             case 1:
                 addService(services, &serviceCount);
+                saveAllData();
                 break;
             case 2:
                 updateService(services, serviceCount);
+                saveAllData();
                 break;
             case 3:
                 listServices(services, serviceCount);
@@ -275,14 +426,15 @@ void handleExit(int sig)
         printf("[INFO] Detected signal %d. Saving data before exit...\n", sig);
     }
 
-    saveCustomers(customers, customerCount);
-    saveRepairOrders(orders, orderCount);
+    saveAllData();
     printSuccess("Data saved. Goodbye!");
     exit(0);
 }
 
 int main()
 {
+    configureConsoleEncoding();
+
     // Register signals
     signal(SIGINT, handleExit);  // Ctrl+C
     signal(SIGTERM, handleExit); // Termination request
@@ -293,6 +445,8 @@ int main()
     // Mission 11: Read data on startup
     loadCustomers(customers, &customerCount);
     loadRepairOrders(orders, &orderCount);
+    loadServices(services, &serviceCount);
+    rebuildCustomerOrderCounts();
 
     printAppHeader();
 

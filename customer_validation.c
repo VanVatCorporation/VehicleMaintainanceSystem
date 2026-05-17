@@ -8,53 +8,37 @@ static int isBlank(char value[])
     return value[0] == '\0';
 }
 
-static int isAllowedSeriesLetter(char value)
+static int isUpperLetter(char value)
 {
-    // Regular Vietnamese car plate series letters.
-    return strchr("ABCDEFGHKLMNPSTUVXYZ", value) != NULL;
+    return value >= 'A' && value <= 'Z';
 }
 
-static int isSpecialOneLetterSeries(char value)
+static int isValidProvinceCode(char carPlate[])
 {
-    // R is used for trailers and semi-trailers.
-    return value == 'R';
+    int code;
+
+    if (!isdigit((unsigned char)carPlate[0]) || !isdigit((unsigned char)carPlate[1]))
+    {
+        return 0;
+    }
+
+    code = (carPlate[0] - '0') * 10 + (carPlate[1] - '0');
+    return code >= 11 && code <= 99;
 }
 
-static int isSpecialTwoLetterSeries(char first, char second)
-{
-    char series[3];
-
-    series[0] = first;
-    series[1] = second;
-    series[2] = '\0';
-
-    // MD is used as ASCII input for Vietnamese electric motorbike series.
-    return strcmp(series, "CD") == 0 ||
-           strcmp(series, "LD") == 0 ||
-           strcmp(series, "DA") == 0 ||
-           strcmp(series, "KT") == 0 ||
-           strcmp(series, "MD") == 0 ||
-           strcmp(series, "RM") == 0 ||
-           strcmp(series, "HC") == 0 ||
-           strcmp(series, "NG") == 0 ||
-           strcmp(series, "QT") == 0 ||
-           strcmp(series, "CV") == 0 ||
-           strcmp(series, "NN") == 0;
-}
-
-static int hasFiveOrderDigits(char carPlate[], int startIndex)
+static int hasDigitRun(char value[], int startIndex, int count)
 {
     int i;
 
-    for (i = startIndex; carPlate[i] != '\0'; i++)
+    for (i = 0; i < count; i++)
     {
-        if (!isdigit((unsigned char)carPlate[i]))
+        if (!isdigit((unsigned char)value[startIndex + i]))
         {
             return 0;
         }
     }
 
-    return strlen(carPlate + startIndex) == 5;
+    return value[startIndex + count] == '\0';
 }
 
 int isValidFullName(char fullName[])
@@ -108,37 +92,37 @@ int isValidCarPlate(char carPlate[])
 {
     size_t length = strlen(carPlate);
 
-    // Accepted after normalization:
-    // 30A12345  = car format 30A-123.45
-    // 29AA12345 = motorbike format 29-AA 123.45
-    // 30LD12345 = special series such as LD, NG, CV, NN.
+    /*
+     * Regex-style rules after normalization:
+     * [1-9][0-9][A-Z][0-9]{5} or [1-9][0-9][A-Z]{2}[0-9]{5},
+     * with the province code constrained to 11..99.
+     */
     if (length != 8 && length != 9)
     {
         return 0;
     }
 
-    if (!isdigit((unsigned char)carPlate[0]) || !isdigit((unsigned char)carPlate[1]))
+    if (!isValidProvinceCode(carPlate))
     {
         return 0;
     }
 
     if (length == 8)
     {
-        if (!isAllowedSeriesLetter(carPlate[2]) && !isSpecialOneLetterSeries(carPlate[2]))
+        if (!isUpperLetter(carPlate[2]))
         {
             return 0;
         }
 
-        return hasFiveOrderDigits(carPlate, 3);
+        return hasDigitRun(carPlate, 3, 5);
     }
 
-    if (!isSpecialTwoLetterSeries(carPlate[2], carPlate[3]) &&
-        (!isAllowedSeriesLetter(carPlate[2]) || !isAllowedSeriesLetter(carPlate[3])))
+    if (!isUpperLetter(carPlate[2]) || !isUpperLetter(carPlate[3]))
     {
         return 0;
     }
 
-    return hasFiveOrderDigits(carPlate, 4);
+    return hasDigitRun(carPlate, 4, 5);
 }
 
 void normalizeCarPlate(char carPlate[])

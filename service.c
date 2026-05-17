@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "repair.h"
 #include "service.h"
+#include "repair.h"
 #include "utils.h"
 
 
@@ -20,10 +20,35 @@ void generateServiceId(char serviceId[], int counter)
         nextId = 999999;
     }
 
-    snprintf(serviceId, 10, "SV%06d", counter + 1);
-
+    snprintf(serviceId, SERVICE_ID_LENGTH, "SV%06d", nextId);
 }
 
+static int inputServiceName(char name[], size_t size, const char prompt[])
+{
+    while (1)
+    {
+        printf("%s", prompt);
+
+        if (!readLine(name, size))
+        {
+            printError("Input error. Please try again.");
+            continue;
+        }
+
+        if (name[0] == '\0')
+        {
+            printError("Service name cannot be empty.");
+        }
+        else if (strlen(name) >= size - 1)
+        {
+            printError("Service name is too long. Please try again.");
+        }
+        else
+        {
+            return 1;
+        }
+    }
+}
 
 static int inputPrice(void)
 {
@@ -37,9 +62,9 @@ static int inputPrice(void)
         {
             printError("Invalid price. Please try again.");
         }
-        else if (price < 0)
+        else if (price <= 0)
         {
-            printError("Price cannot be negative. Please try again.");
+            printError("Price must be greater than 0. Please try again.");
         }
         else
         {
@@ -62,11 +87,7 @@ void addService(Service services[], int *serviceCount)
     generateServiceId(service.serviceId, *serviceCount);
     printf("[INFO] New service ID: %s\n", service.serviceId);
 
-    printf("Enter service name: ");
-    if (!readLine(service.name, sizeof(service.name)))
-    {
-        strcpy(service.name, "");
-    }
+    inputServiceName(service.name, sizeof(service.name), "Enter service name: ");
 
     service.price = inputPrice();
 
@@ -82,6 +103,12 @@ void updateService(Service services[], int serviceCount)
     char id[10];
     int index;
     char priceText[20];
+
+    if (serviceCount <= 0)
+    {
+        printError("No services available.");
+        return;
+    }
     
     printSectionTitle("UPDATE SERVICE");
     printf("Enter service ID to update: ");
@@ -104,11 +131,7 @@ void updateService(Service services[], int serviceCount)
     snprintf(priceText,sizeof(priceText), "%d VND", services[index].price);
     printOrderSummaryRow("Price", priceText);
 
-    printf("Enter new service name: ");
-    if (!readLine(services[index].name, sizeof(services[index].name)))
-    {
-        strcpy(services[index].name, "");
-    }
+    inputServiceName(services[index].name, sizeof(services[index].name), "Enter new service name: ");
 
     services[index].price = inputPrice();
 
