@@ -9,6 +9,7 @@ This project was built as a CLB F-Code Train-C assignment and follows the requir
 - Core required features are implemented.
 - Advanced features are included: daily revenue report, popular service report, invoice export, and colored console output.
 - Data is loaded on startup and automatically saved after data-changing operations.
+- Sample CSV data is included for demo and final testing.
 - The codebase is split into focused modules for customers, repair orders, file I/O, reports, and shared utilities.
 
 ## Key Features
@@ -68,6 +69,7 @@ The application prevents invalid transitions such as skipping a step or moving b
 - Menu-driven terminal interface.
 - Colored status and feedback messages using ANSI escape codes.
 - Fixed-width tables for customers, services, repair orders, and invoices.
+- Windows console encoding is configured at startup for UTF-8 input/output.
 - UTF-8-aware text padding to reduce table misalignment with Vietnamese text.
 
 ## Technical Highlights
@@ -93,8 +95,10 @@ The application prevents invalid transitions such as skipping a step or moving b
 | `repair.h` / `repair.c` | Repair order structure, service catalog, order status workflow, totals, and order UI. |
 | `fileio.h` / `fileio.c` | CSV load/save logic and invoice export. |
 | `report.h` / `report.c` | Daily revenue, popular service statistics, and customer listing support. |
+| `service.h` / `service.c` | Service catalog data structure, service creation, update, lookup, and listing. |
 | `utils.h` / `utils.c` | Shared input handling, string trimming, table padding, menus, and colored messages. |
 | `data/` | Runtime data directory for CSV files. |
+| `output/` | Default directory for exported invoice text files. |
 | `build.bat` | Windows build script using GCC. |
 | `Makefile` | Make-based build configuration. |
 | `CMakeLists.txt` | CMake build configuration. |
@@ -108,9 +112,34 @@ The application stores runtime data in CSV files:
 | `data/customers.csv` | Customer records. |
 | `data/repair_orders.csv` | Repair order records and nested service items. |
 | `data/services.csv` | Service catalog records. |
-| `invoice_ROxxxxxx.txt` | Exported invoice for a completed order. |
+| `output/invoice_ROxxxxxx_YYYYMMDD_HHMMSS.txt` | Exported invoice for a completed order. |
 
 Data is loaded when the program starts. After operations that change data, the application saves the latest customer, repair order, and service state back to disk.
+
+CSV files do not use header rows because the program expects each row to be a data record. The CSV reader/writer supports quoted fields, commas inside text, and escaped double quotes.
+
+If the `output/` directory is missing, invoice export falls back to the project root with the same invoice filename pattern.
+
+## Included Demo Data
+
+The repository includes ready-to-test CSV data:
+
+| File | Included records |
+| --- | ---: |
+| `data/customers.csv` | 5 customers |
+| `data/services.csv` | 6 services |
+| `data/repair_orders.csv` | 12 repair orders |
+
+This demo data is useful for checking paging, status filtering, repair history, search, revenue reports, and popular service reports immediately after startup.
+
+Useful demo check:
+
+```text
+Daily revenue date: 17/05/2026
+Expected revenue : 820000 VND
+```
+
+Note: Some terminals or `Get-Content` output may display Vietnamese text incorrectly if they do not read the CSV as UTF-8. The application configures the Windows console and repairs common mojibake when loading text, so Vietnamese names should display correctly inside the program.
 
 ## Requirements
 
@@ -133,8 +162,15 @@ Using the provided build script:
 Manual GCC build:
 
 ```powershell
-gcc -Wall -Wextra -g -o motorbike_shop.exe main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c
+gcc -Wall -Wextra -g -o motorbike_shop.exe main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c service.c
 .\motorbike_shop.exe
+```
+
+Using the VS Code task:
+
+```text
+Terminal -> Run Build Task -> C/C++: gcc.exe build project
+Terminal -> Run Task -> Run Motorbike Shop
 ```
 
 ### Linux / macOS
@@ -149,7 +185,7 @@ make
 Manual GCC build:
 
 ```bash
-gcc -Wall -Wextra -g -o motorbike_shop main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c
+gcc -Wall -Wextra -g -o motorbike_shop main.c customer.c customer_validation.c repair.c fileio.c utils.c report.c service.c
 ./motorbike_shop
 ```
 
@@ -165,15 +201,17 @@ Run the generated executable from the `build` directory.
 ## Suggested Demo Flow
 
 1. Start the application and verify that existing customers, repair orders, and services are loaded.
-2. Add a few services from `Repair order management -> Add service`.
-3. Add a customer from `Customer management -> Add customer`.
-4. Create a repair order for that customer.
-5. Select services from the catalog and verify the calculated total.
-6. Try an invalid status transition to confirm that the workflow is protected.
-7. Update the status in the valid order until it reaches `Complete`.
-8. Check the generated invoice file.
-9. View repair history by phone number.
-10. Run daily revenue and popular service reports.
+2. Open `Service Management -> List of service` and confirm the service catalog is available.
+3. Open `Repair order management -> List all repair orders` and test `n`, `p`, and `q` paging commands.
+4. Search for a customer by phone number and by vehicle plate.
+5. Search for a repair order by order ID and by vehicle plate.
+6. Add a customer from `Customer management -> Add customer`.
+7. Create a repair order for that customer and select services from the catalog.
+8. Try an invalid status transition to confirm that the workflow is protected.
+9. Update the status in the valid order until it reaches `Complete`.
+10. Check the generated invoice file in `output/`.
+11. View repair history by phone number.
+12. Run daily revenue and popular service reports from `Service Management`.
 
 ## Validation and Business Rules
 
@@ -182,8 +220,9 @@ Run the generated executable from the `build` directory.
 - Phone number must be unique.
 - Customer full name cannot be empty or contain digits.
 - Vehicle plate is normalized before validation and comparison.
+- Vehicle plate province code must be from `11` to `99`.
 - Vehicle plate must be unique.
-- Service price cannot be negative.
+- Service price must be greater than `0`.
 - A repair order cannot be created without at least one service item.
 - Repair order status can only move forward one step at a time.
 - Completed orders are used for revenue and popular service reports.
