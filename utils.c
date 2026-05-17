@@ -6,6 +6,11 @@
 
 #define INPUT_LENGTH 100
 #define DEFAULT_UI_WIDTH 64
+#define UI_COLOR_RESET "\033[0m"
+#define UI_COLOR_BLUE "\033[34m"
+#define UI_COLOR_GREEN "\033[32m"
+#define UI_COLOR_RED "\033[31m"
+#define UI_COLOR_CYAN "\033[36m"
 
 static void fprintRepeated(FILE *stream, char value, int count)
 {
@@ -136,7 +141,7 @@ void printBoxTitle(const char title[], int width)
     leftPadding = padding / 2;
     rightPadding = padding - leftPadding;
 
-    printf("\n+");
+    printf("\n%s+", UI_COLOR_BLUE);
     printRepeated('-', innerWidth);
     printf("+\n|");
     printRepeated(' ', leftPadding);
@@ -144,7 +149,7 @@ void printBoxTitle(const char title[], int width)
     printRepeated(' ', rightPadding);
     printf("|\n+");
     printRepeated('-', innerWidth);
-    printf("+\n");
+    printf("+%s\n", UI_COLOR_RESET);
 }
 
 void printSectionTitle(const char title[])
@@ -199,17 +204,17 @@ void printMenuBack(void)
 
 void printSuccess(const char message[])
 {
-    printf("[OK] %s\n", message);
+    printf("%s[OK] %s%s\n", UI_COLOR_GREEN, message, UI_COLOR_RESET);
 }
 
 void printError(const char message[])
 {
-    printf("[ERROR] %s\n", message);
+    printf("%s[ERROR] %s%s\n", UI_COLOR_RED, message, UI_COLOR_RESET);
 }
 
 void printInfo(const char message[])
 {
-    printf("[INFO] %s\n", message);
+    printf("%s[INFO] %s%s\n", UI_COLOR_CYAN, message, UI_COLOR_RESET);
 }
 
 void removeTrailingNewline(char value[])
